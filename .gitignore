@@ -1,0 +1,111 @@
+# ========================
+# Unity Auto-Generated Folders
+# ========================
+# Эти папки создаются Unity автоматически и не должны попадать в репозиторий
+# [citation:1][citation:2][citation:5]
+
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+
+# ========================
+# IDE and Editor Files
+# ========================
+# Автоматически генерируемые файлы IDE — не коммитим [citation:4][citation:6]
+
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.DotSettings.user
+
+# Rider plugin auto-installed
+/[Aa]ssets/Plugins/Editor/JetBrains*
+
+# ========================
+# Build Artifacts
+# ========================
+# Готовые сборки приложения [citation:2][citation:5]
+
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# Gradle cache (для Android-сборок)
+.gradle/
+
+# ========================
+# Memory & Performance Data
+# ========================
+# Снапшоты памяти могут быть огромными и содержать sensitive данные [citation:5][citation:6]
+
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# ========================
+# Addressables System
+# ========================
+# Кэш Addressables — генерируется автоматически [citation:4][citation:6]
+
+/ServerData/
+/[Aa]ssets/StreamingAssets/aa*
+/[Aa]ssets/AddressableAssetsData/link.xml*
+/[Aa]ssets/Addressables_Temp*/
+/[Aa]ssets/AddressableAssetsData/*/*.bin*
+
+# ========================
+# Visual Scripting (formerly Bolt)
+# ========================
+# Автогенерируемые файлы визуального скриптинга [citation:2][citation:5]
+
+/[Aa]ssets/Unity.VisualScripting.Generated/
+
+# ========================
+# Test Runner
+# ========================
+# Временные сцены для тестов [citation:4]
+
+/[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+InitTestScene*.unity*
+
+# ========================
+# Blender Integration
+# ========================
+# Файлы автосохранения Blender [citation:5]
+
+*.blend1
+*.blend1.meta
+
+# ========================
+# Misc / Other
+# ========================
+
+# Mono crash reports
+mono_crash.*
+
+# Debug symbols
+*.pdb
+*.mdb
+
+# System info on crash
+sysinfo.txt
+crashlytics-build.properties
+
+# Exported objects (FBX, etc.)
+ExportedObj/
+
+# Unity Hub temp files
+.utmp/
+
+# Anchorpoint / other version control tools
+.anchorpoint/
