@@ -10,8 +10,8 @@ public class FatigueManager : MonoBehaviour
     
     [Header("=== ПАРАМЕТРЫ МОРГАНИЯ ===")]
     [Range(0.5f, 10f)] public float blinkInterval = 3f;
-    [Range(0.01f, 0.3f)] public float blinkBlackDuration = 0.04f;  // ← ДЛИТЕЛЬНОСТЬ ЧЁРНОГО ЭКРАНА
-    [Range(0.02f, 0.3f)] public float blinkOpenDuration = 0.06f;    // ← ДЛИТЕЛЬНОСТЬ ОТКРЫТИЯ
+    [Range(0.01f, 0.3f)] public float blinkBlackDuration = 0.04f;
+    [Range(0.02f, 0.3f)] public float blinkOpenDuration = 0.06f;
     
     [Header("=== ПАРАМЕТРЫ ЗАСЫПАНИЯ ===")]
     [Range(0.5f, 10f)] public float sleepInterval = 5f;
@@ -19,33 +19,27 @@ public class FatigueManager : MonoBehaviour
     [Range(0, 30)] public float sleepRestoreAmount = 10f;
     
     [Header("=== ПАРАМЕТРЫ ПЬЯНОГО ЭФФЕКТА ===")]
-    [Range(0.5f, 5f)] public float wobbleSpeed = 2f;
-    [Range(0, 1)] public float wobbleIntensity = 0.5f;
+    [Range(0, 10)] public float pivoScaleActive = 5f;   // Значение при <10%
+    [Range(0, 10)] public float pivoScaleNormal = 0f;   // Значение при >10%
     
     [Header("=== ССЫЛКИ ===")]
-    public BlinkCameraEffect blinkEffect;
+    public URPFullScreenController fullScreenController;
     public GameObject gameOverPanel;
     public Button restartButton;
-    public DrunkScreenEffect drunkEffect;
     
     [Header("=== СОСТОЯНИЯ ===")]
     public bool isOnPhone = false;
     public bool isGameOver = false;
     
-    private Coroutine currentEffectCoroutine;
-    private string currentEffect = "none";
+    private Coroutine blinkCoroutine;
+    private Coroutine sleepCoroutine;
+    private string currentState = "normal";
     private bool isBlinking = false;
     
     void Start()
     {
-        if (blinkEffect == null)
-        {
-            blinkEffect = Camera.main.GetComponent<BlinkCameraEffect>();
-            if (blinkEffect == null)
-            {
-                Debug.LogError("❌ Нужно добавить BlinkCameraEffect на Main Camera!");
-            }
-        }
+        if (fullScreenController == null)
+            fullScreenController = FindObjectOfType<URPFullScreenController>();
         
         if (gameOverPanel != null)
             gameOverPanel.SetActive(false);
@@ -53,8 +47,14 @@ public class FatigueManager : MonoBehaviour
         if (restartButton != null)
             restartButton.onClick.AddListener(RestartGame);
         
-        Debug.Log($"✅ Система усталости запущена!");
-        StartCoroutine(ShowStats());
+        // Выключаем всё
+        if (fullScreenController != null)
+        {
+            fullScreenController.SetBlinkAlpha(0f);
+            fullScreenController.SetPivoScale(pivoScaleNormal);
+        }
+        
+        Debug.Log("✅ FatigueManager запущен!");
     }
     
     void Update()
@@ -70,143 +70,161 @@ public class FatigueManager : MonoBehaviour
             return;
         }
         
-        UpdateEffectsByFatigue();
+        UpdateState();
     }
     
-    void UpdateEffectsByFatigue()
+    void UpdateState()
     {
         if (isOnPhone)
         {
-            if (currentEffect != "phone")
+            if (currentState != "phone")
             {
-                StopAllEffects();
-                currentEffect = "phone";
-                if (drunkEffect != null) drunkEffect.EnableEffect(false);
-                if (blinkEffect != null) blinkEffect.SetAlpha(0f);
+                StopAll();
+                currentState = "phone";
+                if (fullScreenController != null)
+                {
+                    fullScreenController.SetBlinkAlpha(0f);
+                    fullScreenController.SetPivoScale(pivoScaleNormal);
+                }
             }
             return;
         }
         
         if (currentWakeness < 10)
         {
-            if (currentEffect != "drunk_sleep")
+            if (currentState != "drunk")
             {
-                StopAllEffects();
-                currentEffect = "drunk_sleep";
-                Debug.Log($"🥴 КРИТИЧЕСКИЙ: {currentWakeness:F1}%");
+                StopAll();
+                currentState = "drunk";
+                Debug.Log($"🥴 ПЬЯНЫЙ РЕЖИМ: {currentWakeness:F1}%");
                 
-                if (drunkEffect != null)
-                {
-                    drunkEffect.EnableEffect(true);
-                    float intensity = 1f - (currentWakeness / 10f);
-                    drunkEffect.SetIntensity(Mathf.Clamp01(intensity));
-                }
+                // Включаем Pivo шейдер
+                if (fullScreenController != null)
+                    fullScreenController.SetPivoScale(pivoScaleActive);
                 
-                currentEffectCoroutine = StartCoroutine(DrunkEffectUpdater());
-                StartCoroutine(SleepLoop(sleepInterval * 0.5f));
+                // Засыпания чаще
+                sleepCoroutine = StartCoroutine(SleepLoop(sleepInterval * 0.5f));
             }
         }
         else if (currentWakeness < 30)
         {
-            if (currentEffect != "sleep")
+            if (currentState != "sleep")
             {
-                StopAllEffects();
-                currentEffect = "sleep";
+                StopAll();
+                currentState = "sleep";
                 Debug.Log($"😴 ЗАСЫПАНИЕ: {currentWakeness:F1}%");
                 
-                if (drunkEffect != null) drunkEffect.EnableEffect(false);
-                StartCoroutine(SleepLoop(sleepInterval));
+                // Выключаем Pivo
+                if (fullScreenController != null)
+                    fullScreenController.SetPivoScale(pivoScaleNormal);
+                
+                sleepCoroutine = StartCoroutine(SleepLoop(sleepInterval));
             }
         }
         else if (currentWakeness < 50)
         {
-            if (currentEffect != "blink")
+            if (currentState != "blink")
             {
-                StopAllEffects();
-                currentEffect = "blink";
+                StopAll();
+                currentState = "blink";
                 Debug.Log($"😉 МОРГАНИЕ: {currentWakeness:F1}%");
                 
-                if (drunkEffect != null) drunkEffect.EnableEffect(false);
-                StartCoroutine(BlinkLoop());
+                // Выключаем Pivo
+                if (fullScreenController != null)
+                    fullScreenController.SetPivoScale(pivoScaleNormal);
+                
+                blinkCoroutine = StartCoroutine(BlinkLoop());
             }
         }
         else
         {
-            if (currentEffect != "none")
+            if (currentState != "normal")
             {
-                StopAllEffects();
-                currentEffect = "none";
+                StopAll();
+                currentState = "normal";
                 Debug.Log($"✅ НОРМА: {currentWakeness:F1}%");
                 
-                if (drunkEffect != null) drunkEffect.EnableEffect(false);
-                if (blinkEffect != null) blinkEffect.SetAlpha(0f);
+                if (fullScreenController != null)
+                {
+                    fullScreenController.SetBlinkAlpha(0f);
+                    fullScreenController.SetPivoScale(pivoScaleNormal);
+                }
             }
         }
+    }
+    
+    void StopAll()
+    {
+        if (blinkCoroutine != null) StopCoroutine(blinkCoroutine);
+        if (sleepCoroutine != null) StopCoroutine(sleepCoroutine);
+        
+        blinkCoroutine = null;
+        sleepCoroutine = null;
+        
+        if (fullScreenController != null)
+            fullScreenController.SetBlinkAlpha(0f);
+        
+        isBlinking = false;
     }
     
     IEnumerator BlinkLoop()
     {
-        while (currentEffect == "blink" && !isOnPhone && !isGameOver)
+        while (currentState == "blink" && !isOnPhone && !isGameOver)
         {
             yield return new WaitForSeconds(blinkInterval);
-            if (currentEffect == "blink" && !isOnPhone && !isGameOver)
+            if (currentState == "blink" && !isOnPhone && !isGameOver)
             {
-                yield return StartCoroutine(BlinkEffect());
+                yield return StartCoroutine(DoBlink());
             }
         }
     }
     
-    IEnumerator BlinkEffect()
+    IEnumerator DoBlink()
     {
         if (isBlinking) yield break;
         isBlinking = true;
         
-        // МГНОВЕННО чёрный экран
-        if (blinkEffect != null) blinkEffect.SetAlpha(1f);
-        
-        // Короткая задержка (только чёрный экран)
+        if (fullScreenController != null) fullScreenController.SetBlinkAlpha(1f);
         yield return new WaitForSeconds(blinkBlackDuration);
         
-        // Плавное открытие
         float elapsed = 0;
         while (elapsed < blinkOpenDuration)
         {
             float alpha = Mathf.Lerp(1, 0, elapsed / blinkOpenDuration);
-            if (blinkEffect != null) blinkEffect.SetAlpha(alpha);
+            if (fullScreenController != null) fullScreenController.SetBlinkAlpha(alpha);
             elapsed += Time.deltaTime;
             yield return null;
         }
         
-        // Финальная очистка
-        if (blinkEffect != null) blinkEffect.SetAlpha(0f);
-        
+        if (fullScreenController != null) fullScreenController.SetBlinkAlpha(0f);
         isBlinking = false;
     }
     
     IEnumerator SleepLoop(float interval)
     {
-        while ((currentEffect == "sleep" || currentEffect == "drunk_sleep") && !isOnPhone && !isGameOver)
+        while ((currentState == "sleep" || currentState == "drunk") && !isOnPhone && !isGameOver)
         {
             yield return new WaitForSeconds(interval);
-            if ((currentEffect == "sleep" || currentEffect == "drunk_sleep") && !isOnPhone && !isGameOver)
+            if ((currentState == "sleep" || currentState == "drunk") && !isOnPhone && !isGameOver)
             {
-                yield return StartCoroutine(SleepEffect());
+                yield return StartCoroutine(DoSleep());
             }
         }
     }
     
-    IEnumerator SleepEffect()
+    IEnumerator DoSleep()
     {
         float elapsed = 0;
         
         while (elapsed < sleepDuration)
         {
             float alpha = Mathf.Lerp(0, 1, elapsed / sleepDuration);
-            if (blinkEffect != null) blinkEffect.SetAlpha(alpha);
+            if (fullScreenController != null) fullScreenController.SetBlinkAlpha(alpha);
             elapsed += Time.deltaTime;
             yield return null;
         }
-        if (blinkEffect != null) blinkEffect.SetAlpha(1f);
+        
+        if (fullScreenController != null) fullScreenController.SetBlinkAlpha(1f);
         
         float oldValue = currentWakeness;
         currentWakeness = Mathf.Min(currentWakeness + sleepRestoreAmount, 100);
@@ -216,40 +234,24 @@ public class FatigueManager : MonoBehaviour
         while (elapsed < sleepDuration)
         {
             float alpha = Mathf.Lerp(1, 0, elapsed / sleepDuration);
-            if (blinkEffect != null) blinkEffect.SetAlpha(alpha);
+            if (fullScreenController != null) fullScreenController.SetBlinkAlpha(alpha);
             elapsed += Time.deltaTime;
             yield return null;
         }
-        if (blinkEffect != null) blinkEffect.SetAlpha(0f);
-    }
-    
-    IEnumerator DrunkEffectUpdater()
-    {
-        while (currentEffect == "drunk_sleep" && !isGameOver)
-        {
-            if (drunkEffect != null)
-            {
-                float intensity = 1f - (currentWakeness / 10f);
-                drunkEffect.SetIntensity(Mathf.Clamp01(intensity));
-            }
-            yield return new WaitForSeconds(0.3f);
-        }
-    }
-    
-    void StopAllEffects()
-    {
-        if (currentEffectCoroutine != null)
-            StopCoroutine(currentEffectCoroutine);
         
-        if (blinkEffect != null) blinkEffect.SetAlpha(0f);
-        if (drunkEffect != null) drunkEffect.EnableEffect(false);
+        if (fullScreenController != null) fullScreenController.SetBlinkAlpha(0f);
     }
     
     void GameOver()
     {
         isGameOver = true;
-        StopAllEffects();
-        if (blinkEffect != null) blinkEffect.SetAlpha(1f);
+        StopAll();
+        
+        if (fullScreenController != null)
+        {
+            fullScreenController.SetBlinkAlpha(1f);
+            fullScreenController.SetPivoScale(pivoScaleNormal);
+        }
         
         Debug.Log("💀 GAME OVER!");
         
@@ -269,28 +271,19 @@ public class FatigueManager : MonoBehaviour
         );
     }
     
-    IEnumerator ShowStats()
-    {
-        while (!isGameOver)
-        {
-            yield return new WaitForSeconds(5f);
-            Debug.Log($"📊 Бодрость: {currentWakeness:F1}%");
-        }
-    }
-    
     public void RestoreWakeness(float amount)
     {
         if (!isGameOver)
         {
             currentWakeness = Mathf.Min(currentWakeness + amount, 100);
-            Debug.Log($"☕ +{amount}% бодрости! Текущая: {currentWakeness}%");
+            Debug.Log($"☕ +{amount}% бодрости!");
+            UpdateState();
         }
     }
     
     public void SetOnPhone(bool value)
     {
         isOnPhone = value;
-        Debug.Log($"📞 Телефон: {(isOnPhone ? "поднят" : "положен")}");
-        if (!isOnPhone && !isGameOver) UpdateEffectsByFatigue();
+        UpdateState();
     }
 }

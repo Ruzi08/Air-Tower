@@ -387,20 +387,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c9f1c864f58053047a39804e34830f87, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FatigueManager
-  currentWakeness: 52.7
-  wakenessReducePerSecond: 1
+  currentWakeness: 82.9
+  wakenessReducePerSecond: 0.08
   blinkInterval: 3.19
   blinkBlackDuration: 0.14
   blinkOpenDuration: 0.276
   sleepInterval: 5
   sleepDuration: 1.5
   sleepRestoreAmount: 0
-  wobbleSpeed: 2
-  wobbleIntensity: 0.05
-  blinkEffect: {fileID: 330585549}
+  pivoScaleActive: 5
+  pivoScaleNormal: 0
+  fullScreenController: {fileID: 338579613}
   gameOverPanel: {fileID: 981735743}
   restartButton: {fileID: 2051413972}
-  drunkEffect: {fileID: 510399615}
   isOnPhone: 0
   isGameOver: 0
 --- !u!1 &224417608
@@ -528,7 +527,6 @@ GameObject:
   - component: {fileID: 330585544}
   - component: {fileID: 330585547}
   - component: {fileID: 330585548}
-  - component: {fileID: 330585549}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -679,19 +677,71 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &330585549
+--- !u!1 &338579610
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 338579612}
+  - component: {fileID: 338579611}
+  - component: {fileID: 338579613}
+  m_Layer: 0
+  m_Name: URPController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &338579611
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 330585543}
+  m_GameObject: {fileID: 338579610}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 56920d1ccdfb8d345afd2563924981b4, type: 3}
+  m_Script: {fileID: 11500000, guid: 211c6a51a3e705243bb0c70cd8fa39a4, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BlinkCameraEffect
+  m_EditorClassIdentifier: Assembly-CSharp::URPBlinkController
   blinkMaterial: {fileID: 2100000, guid: 833e15b02c4423f4cab8ae1f314f3a1b, type: 2}
+  pivoMaterial: {fileID: 2100000, guid: d539d9e7406fcc54c9336bfe63a8889b, type: 2}
+  alphaID: 0
+  intensityID: 0
+--- !u!4 &338579612
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 338579610}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 621.3132, y: 85.58688, z: -441.6803}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &338579613
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 338579610}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66845813ad9703f479333c0920856e68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::URPFullScreenController
+  blinkMaterial: {fileID: 2100000, guid: 833e15b02c4423f4cab8ae1f314f3a1b, type: 2}
+  pivoMaterial: {fileID: 2100000, guid: d539d9e7406fcc54c9336bfe63a8889b, type: 2}
+  blinkAlphaParam: _Alpha
+  pivoScaleParam: _NoiseScale
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -907,10 +957,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f9a9aebbe81a954fa7fa02eda2f304b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DrunkScreenEffect
-  waveSpeed: 2
-  waveAmount: 8
-  colorShiftSpeed: 1
-  intensity: 0.5
+  drunkMaterial: {fileID: 0}
+  noiseID: 0
 --- !u!1 &530327775
 GameObject:
   m_ObjectHideFlags: 0
@@ -3236,3 +3284,4 @@ SceneRoots:
   - {fileID: 1235314789}
   - {fileID: 1483374808}
   - {fileID: 1405415480}
+  - {fileID: 338579612}
