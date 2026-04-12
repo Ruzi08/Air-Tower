@@ -116,8 +116,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Sound_RandomPlayer
   loop: 0
   destroyed: 0
-  MinPitch: 0.8
-  MaxPitch: 1.2
+  minPitch: 0.8
+  maxPitch: 1.2
   sounds:
   - {fileID: 8300000, guid: 701584f08c141f84882b25c190908e5f, type: 3}
   - {fileID: 8300000, guid: a572968d79d6c79488aae8a4e3621eb2, type: 3}
@@ -129,9 +129,9 @@ MonoBehaviour:
   maxVolume: 0.6
   maxDistance: 20
   fadeSpeed: 2
+  volume: 0
   minDelay: 5
   maxDelay: 15
-  playOnlyWhenPlayerNear: 1
   randomPitchMin: 0.85
   randomPitchMax: 1.2
   allowedSoundIndices: 

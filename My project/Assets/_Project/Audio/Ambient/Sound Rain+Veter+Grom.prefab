@@ -25,6 +25,14 @@ PrefabInstance:
       value: 0.8
       objectReference: {fileID: 0}
     - target: {fileID: -7298002400581348808, guid: 146391c5ae49f7f46a203309c793326d, type: 3}
+      propertyPath: maxPitch
+      value: 1.2
+      objectReference: {fileID: 0}
+    - target: {fileID: -7298002400581348808, guid: 146391c5ae49f7f46a203309c793326d, type: 3}
+      propertyPath: minPitch
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: -7298002400581348808, guid: 146391c5ae49f7f46a203309c793326d, type: 3}
       propertyPath: maxVolume
       value: 0.9
       objectReference: {fileID: 0}
@@ -88,7 +96,8 @@ PrefabInstance:
       propertyPath: m_Name
       value: Sound Rain+Veter+Grom
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: -7298002400581348808, guid: 146391c5ae49f7f46a203309c793326d, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
@@ -114,10 +123,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Sound_RainVeterGrom
   loop: 1
-  volume: 0.9
   destroyed: 0
-  MinPitch: 0.8
-  MaxPitch: 1.2
+  minPitch: 0.8
+  maxPitch: 1.2
   sounds:
   - {fileID: 8300000, guid: 24d16e3f462068f419650b8d006dbe15, type: 3}
   - {fileID: 8300000, guid: 0c02bec5d540fee42aee916994686b89, type: 3}
@@ -127,6 +135,7 @@ MonoBehaviour:
   maxVolume: 0
   maxDistance: 20
   fadeSpeed: 2
+  volume: 0.9
   minDelay: 5
   maxDelay: 15
   secondSoundIndex: 1

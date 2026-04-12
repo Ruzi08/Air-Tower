@@ -29,6 +29,14 @@ PrefabInstance:
       value: 0.8
       objectReference: {fileID: 0}
     - target: {fileID: -7298002400581348808, guid: 146391c5ae49f7f46a203309c793326d, type: 3}
+      propertyPath: maxPitch
+      value: 1.2
+      objectReference: {fileID: 0}
+    - target: {fileID: -7298002400581348808, guid: 146391c5ae49f7f46a203309c793326d, type: 3}
+      propertyPath: minPitch
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: -7298002400581348808, guid: 146391c5ae49f7f46a203309c793326d, type: 3}
       propertyPath: fadeSpeed
       value: 0
       objectReference: {fileID: 0}
