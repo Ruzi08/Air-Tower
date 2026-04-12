@@ -4,8 +4,8 @@ public class Sound : MonoBehaviour
 {   
     public bool loop;
     public bool destroyed;
-    public float MinPitch;
-    public float MaxPitch;
+    public float minPitch;
+    public float maxPitch;
     public AudioClip[] sounds;
     public bool isPlaying;
     public AudioListener listener;
@@ -13,25 +13,30 @@ public class Sound : MonoBehaviour
     public float maxVolume;
     public float maxDistance = 20f; // Максимальная дистанция слышимости
     public float fadeSpeed = 2f;    // Скорость затухания/нарастания
-    protected float volume;
-    protected AudioSource audioSrc;
-    protected bool IsSoundAvable;
-    protected float currentVolume;    // Текущая плавно изменяемая громкость
-    protected float targetVolume;     // Целевая громкость
+    [SerializeField] protected float volume;
+    protected AudioSource AudioSrc;
+    protected bool IsSoundAvailable;
+    protected float CurrentVolume;    // Текущая плавно изменяемая громкость
+    protected float TargetVolume;     // Целевая громкость
     
     protected virtual void Awake()
     {
-        audioSrc = GetComponent<AudioSource>();
-        if (audioSrc == null)
-            audioSrc = gameObject.AddComponent<AudioSource>();
+        AudioSrc = GetComponent<AudioSource>();
+        if (AudioSrc == null)
+            AudioSrc = gameObject.AddComponent<AudioSource>();
         volume = maxVolume;
-        currentVolume = minVolume;
-        targetVolume = minVolume;
+        CurrentVolume = minVolume;
+        TargetVolume = minVolume;
     }
     
     protected virtual void Start()
     {
-        PlaySnd(sounds[0], loop: loop, volume: volume, destroyed: destroyed, p1: MinPitch, p2: MaxPitch);
+        if (sounds == null || sounds.Length == 0 || sounds[0] == null)
+        {
+            Debug.LogWarning("Sound.Start() requires sounds[0] to be assigned before playback can begin.", this);
+            return;
+        }
+        PlaySnd(sounds[0], loop: loop, volume: volume, destroyed: destroyed, p1: minPitch, p2: maxPitch);
     }
 
     protected virtual void Update()
@@ -44,9 +49,9 @@ public class Sound : MonoBehaviour
     // Если игрок вне зоны слышимости - выходим
     if (distance > maxDistance)
     {
-        targetVolume = minVolume;
-        currentVolume = Mathf.Lerp(currentVolume, targetVolume, Time.deltaTime * fadeSpeed);
-        audioSrc.volume = currentVolume;
+        TargetVolume = minVolume;
+        CurrentVolume = Mathf.Lerp(CurrentVolume, TargetVolume, Time.deltaTime * fadeSpeed);
+        AudioSrc.volume = CurrentVolume;
         return;
     }
     
@@ -55,20 +60,20 @@ public class Sound : MonoBehaviour
     float calculatedVolume = Mathf.Lerp(minVolume, maxVolume, distanceVolume);
     
     // Проверяем видимость
-    IsSoundAvable = CheckVisibility(listener.transform.position);
+    IsSoundAvailable = CheckVisibility(listener.transform.position);
     
-    if (IsSoundAvable)
+    if (IsSoundAvailable)
     {
-        targetVolume = calculatedVolume;
+        TargetVolume = calculatedVolume;
     }
     else
     {
-        targetVolume = minVolume;
+        TargetVolume = minVolume;
     }
     
     // Плавное изменение громкости
-    currentVolume = Mathf.Lerp(currentVolume, targetVolume, Time.deltaTime * fadeSpeed);
-    audioSrc.volume = currentVolume;
+    CurrentVolume = Mathf.Lerp(CurrentVolume, TargetVolume, Time.deltaTime * fadeSpeed);
+    AudioSrc.volume = CurrentVolume;
 }
 
 protected virtual bool CheckVisibility(Vector3 targetPosition)
@@ -129,25 +134,25 @@ void OnDrawGizmosSelected()
     
     public virtual void PlaySnd(AudioClip clip, float volume = 1f, bool destroyed = false, float p1 = 0.85f, float p2 = 1.2f, bool loop = false)
     {   
-        audioSrc.clip = clip;
-        audioSrc.loop = loop;
-        audioSrc.pitch = Random.Range(p1, p2);
-        audioSrc.volume = volume;
-        audioSrc.Play();
+        AudioSrc.clip = clip;
+        AudioSrc.loop = loop;
+        AudioSrc.pitch = Random.Range(p1, p2);
+        AudioSrc.volume = volume;
+        AudioSrc.Play();
         
         // Инициализируем текущую громкость
-        currentVolume = volume;
-        targetVolume = volume;
+        CurrentVolume = volume;
+        TargetVolume = volume;
     }
     
     public void ChangeVolume(float newVolume)
     {
-        targetVolume = Mathf.Clamp(newVolume, minVolume, maxVolume);
+        TargetVolume = Mathf.Clamp(newVolume, minVolume, maxVolume);
     }
     
     public virtual void StopSnd()
     {
-        audioSrc.Stop();
+        AudioSrc.Stop();
     }
     
     // Дополнительный метод для установки скорости затухания

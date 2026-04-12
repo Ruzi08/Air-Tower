@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public class Sound_RandomPlayerAdvanced : Sound
+public class SoundWalkieTalkie : Sound
 {
     public float minDelay = 5f;
     public float maxDelay = 15f;
@@ -12,31 +12,32 @@ public class Sound_RandomPlayerAdvanced : Sound
     
     public bool excludeMainSound = true;
     
-    private float nextSoundTimer;
-    private bool isRandomSoundPlaying;
-    private AudioSource randomAudioSource;
-    private List<int> availableIndices = new List<int>();
+    private float _nextSoundTimer;
+    private bool _isRandomSoundPlaying;
+    private AudioSource _randomAudioSource;
+    private List<int> _availableIndices = new List<int>();
     
     protected override void Awake()
     {
         base.Awake();
         
-        randomAudioSource = gameObject.AddComponent<AudioSource>();
-        randomAudioSource.playOnAwake = false;
-        randomAudioSource.loop = false;
+        _randomAudioSource = gameObject.AddComponent<AudioSource>();
+        _randomAudioSource.playOnAwake = false;
+        _randomAudioSource.loop = false;
         
         UpdateAvailableIndices();
     }
     
     protected override void Start()
     {
+        
         base.Start();
         SetRandomTimer();
     }
     
     private void UpdateAvailableIndices()
     {
-        availableIndices.Clear();
+        _availableIndices.Clear();
         
         if (sounds == null) return;
         
@@ -51,11 +52,11 @@ public class Sound_RandomPlayerAdvanced : Sound
             if (allowedSoundIndices.Count > 0)
             {
                 if (allowedSoundIndices.Contains(i))
-                    availableIndices.Add(i);
+                    _availableIndices.Add(i);
             }
             else
             {
-                availableIndices.Add(i);
+                _availableIndices.Add(i);
             }
         }
     }
@@ -66,16 +67,16 @@ public class Sound_RandomPlayerAdvanced : Sound
         
         if (listener == null) return;
         
-        bool canPlay = !isRandomSoundPlaying && availableIndices.Count > 0;
+        bool canPlay = !_isRandomSoundPlaying && _availableIndices.Count > 0;
         
         if (canPlay)
         {
-            bool playerCondition = IsSoundAvable;
+            bool playerCondition = IsSoundAvailable;
             
             if (playerCondition)
             {
-                nextSoundTimer -= Time.deltaTime;
-                if (nextSoundTimer <= 0)
+               _nextSoundTimer -= Time.deltaTime;
+                if (_nextSoundTimer <= 0)
                 {
                     PlayRandomSoundFromAvailable();
                     SetRandomTimer();
@@ -83,29 +84,31 @@ public class Sound_RandomPlayerAdvanced : Sound
             }
         }
         
-        if (randomAudioSource != null && randomAudioSource.isPlaying && audioSrc != null)
+        if (_randomAudioSource != null && _randomAudioSource.isPlaying && AudioSrc != null)
         {
-            randomAudioSource.volume = volume * audioSrc.volume;
+            _randomAudioSource.volume = volume * AudioSrc.volume;
         }
     }
     
     private void PlayRandomSoundFromAvailable()
     {
-        if (availableIndices.Count == 0) return;
+        if (_availableIndices.Count == 0) return;
         
-        int randomIndex = Random.Range(0, availableIndices.Count);
-        int soundIndex = availableIndices[randomIndex];
+        int randomIndex = Random.Range(0, _availableIndices.Count);
+        int soundIndex = _availableIndices[randomIndex];
         
         if (soundIndex >= sounds.Length || sounds[soundIndex] == null) return;
         
-        isRandomSoundPlaying = true;
+        _isRandomSoundPlaying = true;
         
-        randomAudioSource.clip = sounds[soundIndex];
-        randomAudioSource.volume = volume * audioSrc.volume;
-        randomAudioSource.pitch = Random.Range(randomPitchMin, randomPitchMax);
-        randomAudioSource.Play();
+        _randomAudioSource.clip = sounds[soundIndex];
+        _randomAudioSource.volume = volume;
+        _randomAudioSource.pitch = Random.Range(randomPitchMin, randomPitchMax);
+        _randomAudioSource.Play();
         
-        Debug.Log($"Воспроизведен звук [{soundIndex}]: {sounds[soundIndex].name}");
+        #if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"Воспроизведен звук [{soundIndex}]: {sounds[soundIndex].name}");
+        #endif
         
         CancelInvoke(nameof(ResetRandomSoundFlag));
         Invoke(nameof(ResetRandomSoundFlag), sounds[soundIndex].length);
@@ -113,12 +116,12 @@ public class Sound_RandomPlayerAdvanced : Sound
     
     private void ResetRandomSoundFlag()
     {
-        isRandomSoundPlaying = false;
+        _isRandomSoundPlaying = false;
     }
     
     private void SetRandomTimer()
     {
-        nextSoundTimer = Random.Range(minDelay, maxDelay);
+        _nextSoundTimer = Random.Range(minDelay, maxDelay);
     }
     
     public void ManualPlayRandomSound()
@@ -141,19 +144,19 @@ public class Sound_RandomPlayerAdvanced : Sound
     public override void StopSnd()
     {
         base.StopSnd();
-        if (randomAudioSource != null && randomAudioSource.isPlaying)
+        if (_randomAudioSource != null && _randomAudioSource.isPlaying)
         {
-            randomAudioSource.Stop();
+            _randomAudioSource.Stop();
         }
-        isRandomSoundPlaying = false;
+        _isRandomSoundPlaying = false;
         CancelInvoke(nameof(ResetRandomSoundFlag));
     }
     
     void OnDestroy()
     {
-        if (randomAudioSource != null)
+        if (_randomAudioSource != null)
         {
-            Destroy(randomAudioSource);
+            Destroy(_randomAudioSource);
         }
         CancelInvoke();
     }

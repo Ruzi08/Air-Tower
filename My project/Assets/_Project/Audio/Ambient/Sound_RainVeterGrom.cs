@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class Sound_RainVeterGrom : Sound
+public class SoundRainVeterGrom : Sound
 {   
     // Новые параметры для случайного воспроизведения второго звука
     public float minDelay = 5f;     // Минимальная задержка между звуками
@@ -10,22 +10,54 @@ public class Sound_RainVeterGrom : Sound
     public float secondSoundPitchMin = 0.9f; // Минимальный питч второго звука
     public float secondSoundPitchMax = 1.1f; // Максимальный питч второго звука
     
-    private float nextSoundTimer;    // Таймер до следующего случайного звука
-    private bool isSecondSoundPlaying; // Флаг, играет ли второй звук
-    private AudioSource secondAudioSource; // Отдельный AudioSource для второго звука
+    private float _nextSoundTimer;    // Таймер до следующего случайного звука
+    private bool _isSecondSoundPlaying; // Флаг, играет ли второй звук
+    private AudioSource _secondAudioSource; // Отдельный AudioSource для второго звука
     
     void Start()
     {
+        if (sounds == null || sounds.Length == 0 || sounds[0] == null)
+        {
+            Debug.LogWarning("Sound.Start() requires sounds[0] to be assigned before playback can begin.", this);
+            return;
+        }
         // Создаем отдельный AudioSource для второго звука
-        secondAudioSource = gameObject.AddComponent<AudioSource>();
-        secondAudioSource.playOnAwake = false;
-        secondAudioSource.loop = false;
-        
+        _secondAudioSource = gameObject.AddComponent<AudioSource>();
         // Запускаем основной звук
-        PlaySnd(sounds[0], loop: loop, volume: volume, destroyed: destroyed, p1: MinPitch, p2: MaxPitch);
+        PlaySnd(sounds[0], loop: loop, volume: volume, destroyed: destroyed, p1: minPitch, p2: maxPitch);
+        
+        // Копируем настройки маршрутизации/пространственного звука с основного AudioSource
+        CopyAudioSourceSettings(AudioSrc, _secondAudioSource);
+        _secondAudioSource.playOnAwake = false;
+        _secondAudioSource.loop = false;
         
         // Инициализация таймера
         SetRandomTimer();
+    }
+    private void CopyAudioSourceSettings(AudioSource source, AudioSource target)
+    {
+        if (source == null || target == null) return;
+        target.outputAudioMixerGroup = source.outputAudioMixerGroup;
+        target.bypassEffects = source.bypassEffects;
+        target.bypassListenerEffects = source.bypassListenerEffects;
+        target.bypassReverbZones = source.bypassReverbZones;
+        target.priority = source.priority;
+        target.mute = source.mute;
+        target.spatialBlend = source.spatialBlend;
+        target.reverbZoneMix = source.reverbZoneMix;
+        target.dopplerLevel = source.dopplerLevel;
+        target.spread = source.spread;
+        target.rolloffMode = source.rolloffMode;
+        target.minDistance = source.minDistance;
+        target.maxDistance = source.maxDistance;
+        target.panStereo = source.panStereo;
+        target.velocityUpdateMode = source.velocityUpdateMode;
+        target.ignoreListenerPause = source.ignoreListenerPause;
+        target.ignoreListenerVolume = source.ignoreListenerVolume;
+        if (source.rolloffMode == AudioRolloffMode.Custom)
+        {
+            target.SetCustomCurve(AudioSourceCurveType.CustomRolloff, source.GetCustomCurve(AudioSourceCurveType.CustomRolloff));
+        }
     }
 
     void Update()
@@ -36,10 +68,10 @@ public class Sound_RainVeterGrom : Sound
         if (listener == null) return;
         
         // Обработка случайного воспроизведения второго звука
-        if (!isSecondSoundPlaying && sounds.Length > secondSoundIndex && secondAudioSource != null)
+        if (!_isSecondSoundPlaying && sounds.Length > secondSoundIndex && _secondAudioSource != null)
         {
-            nextSoundTimer -= Time.deltaTime;
-            if (nextSoundTimer <= 0)
+            _nextSoundTimer -= Time.deltaTime;
+            if (_nextSoundTimer <= 0)
             {
                 PlayRandomSecondSound();
                 SetRandomTimer();
@@ -47,10 +79,10 @@ public class Sound_RainVeterGrom : Sound
         }
         
         // Обновляем громкость второго AudioSource в зависимости от текущей громкости основного
-        if (secondAudioSource != null && secondAudioSource.isPlaying)
+        if (_secondAudioSource != null && _secondAudioSource.isPlaying)
         {
             // Громкость второго звука зависит от громкости основного (эффект затухания вместе с дождем)
-            secondAudioSource.volume = secondSoundVolume * audioSrc.volume;
+            _secondAudioSource.volume = secondSoundVolume * AudioSrc.volume;
         }
     }
     
@@ -58,14 +90,14 @@ public class Sound_RainVeterGrom : Sound
     private void PlayRandomSecondSound()
     {
         if (sounds.Length <= secondSoundIndex || sounds[secondSoundIndex] == null) return;
-        if (secondAudioSource == null) return;
+        if (_secondAudioSource == null) return;
         
-        isSecondSoundPlaying = true;
+        _isSecondSoundPlaying = true;
         
-        secondAudioSource.clip = sounds[secondSoundIndex];
-        secondAudioSource.volume = secondSoundVolume * audioSrc.volume;
-        secondAudioSource.pitch = Random.Range(secondSoundPitchMin, secondSoundPitchMax);
-        secondAudioSource.Play();
+        _secondAudioSource.clip = sounds[secondSoundIndex];
+        _secondAudioSource.volume = secondSoundVolume * AudioSrc.volume;
+        _secondAudioSource.pitch = Random.Range(secondSoundPitchMin, secondSoundPitchMax);
+        _secondAudioSource.Play();
         
         // Сбрасываем флаг через длительность звука
         Invoke(nameof(ResetSecondSoundFlag), sounds[secondSoundIndex].length);
@@ -73,23 +105,23 @@ public class Sound_RainVeterGrom : Sound
     
     private void ResetSecondSoundFlag()
     {
-        isSecondSoundPlaying = false;
+        _isSecondSoundPlaying = false;
     }
     
     private void SetRandomTimer()
     {
-        nextSoundTimer = Random.Range(minDelay, maxDelay);
+        _nextSoundTimer = Random.Range(minDelay, maxDelay);
     }
     
     // Переопределяем метод StopSnd, чтобы останавливать и второй звук
-    public new void StopSnd()
+    public override void StopSnd()
     {
         base.StopSnd();
-        if (secondAudioSource != null && secondAudioSource.isPlaying)
+        if (_secondAudioSource != null && _secondAudioSource.isPlaying)
         {
-            secondAudioSource.Stop();
+            _secondAudioSource.Stop();
         }
-        isSecondSoundPlaying = false;
+        _isSecondSoundPlaying = false;
     }
     
     // Метод для ручного вызова второго звука
