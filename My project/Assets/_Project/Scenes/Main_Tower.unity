@@ -623,7 +623,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c9f1c864f58053047a39804e34830f87, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FatigueManager
-  currentWakeness: 82.9
+  currentWakeness: 7.5
   wakenessReducePerSecond: 0.08
   blinkInterval: 3.19
   blinkBlackDuration: 0.14
