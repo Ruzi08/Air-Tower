@@ -237,8 +237,8 @@ public class RadarManager : MonoBehaviour
 
         // Подписка на события
         ac.OnSelected += HandleAircraftSelected;
-        ac.OnReachedDestination += HandleAircraftReachedDestination;
         ac.OnDestroyed += HandleAircraftDestroyed;
+        ac.OnDestinationReached += HandleDestinationReached;
 
         activeAircrafts.Add(ac);
     }
@@ -395,8 +395,22 @@ public class RadarManager : MonoBehaviour
         return Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f));
     }
 
-    private void HandleAircraftReachedDestination(AircraftController ac)
+    private void HandleDestinationReached(AircraftController ac, bool hitTarget)
     {
+        if (hitTarget)
+        {
+            Debug.Log($"САМОЛЁТ {ac.AircraftID} УСПЕШНО ПРИБЫЛ В ЦЕЛЕВУЮ ЗОНУ!");
+
+
+            // TODO: Добавить очки, звук успеха, эффекты
+        }
+        else
+        {
+            Debug.Log($"САМОЛЁТ {ac.AircraftID} ПРОМАХНУЛСЯ! Цель: {ac.TargetZoneNorm}, Прибыл: {ac.EndPosNorm}");
+
+
+            // TODO: Штраф, звук ошибки, эффекты
+        }
     }
 
     public bool IsAircraftExists(string id)
@@ -411,12 +425,10 @@ public class RadarManager : MonoBehaviour
         {
             if (aircraft != null && aircraft.AircraftID == id)
             {
-                Debug.Log($"Самолет с ID {id} найден на радаре");
                 return true;
             }
         }
 
-        Debug.Log($"Самолет с ID {id} не найден. Активных самолетов: {activeAircrafts.Count}");
         return false;
     }
 
@@ -442,7 +454,6 @@ public class RadarManager : MonoBehaviour
             if (ac != null)
             {
                 ac.OnSelected -= HandleAircraftSelected;
-                ac.OnReachedDestination -= HandleAircraftReachedDestination;
                 ac.OnDestroyed -= HandleAircraftDestroyed;
             }
         }
@@ -470,7 +481,6 @@ public class RadarManager : MonoBehaviour
         editTrajectoryLineImage.raycastTarget = false;
         editTrajectoryLineImage.gameObject.SetActive(false);
 
-        Debug.Log("EditTrajectoryLine создана");
     }
 
     private void HandleTrajectoryEditing()
@@ -505,7 +515,7 @@ public class RadarManager : MonoBehaviour
         // Фиксация по ЛКМ или Enter
         if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Return))
         {
-            Debug.Log($"✅ Траектория зафиксирована: {pendingTrajectory.Value}");
+            Debug.Log($"Траектория зафиксирована: {pendingTrajectory.Value}");
             StopEditingMode();
         }
 
@@ -595,7 +605,6 @@ public class RadarManager : MonoBehaviour
         pendingTrajectory = null;
         pendingAircraftID = null;
         StopEditingMode();
-        Debug.Log("❌ Редактирование отменено");
     }
 
     public void StartEditMode()
@@ -616,8 +625,7 @@ public class RadarManager : MonoBehaviour
         Vector2 edgePoint = GetEdgePoint(start, currentDir);
         UpdateEditLine(start, edgePoint);
 
-        Debug.Log($"✏️ Режим редактирования. Крутите колесико для поворота. ЛКМ - подтвердить, ESC/ПКМ - отмена.");
-        Debug.Log($"   Начальный угол: {currentEditAngle:F1}°");
+        Debug.Log($"Начальный угол: {currentEditAngle:F1}°");
     }
 
     public void ApplyPendingTrajectory(string aircraftID)
@@ -630,7 +638,7 @@ public class RadarManager : MonoBehaviour
                 ac.SetNewDestination(pendingTrajectory.Value);
                 pendingTrajectory = null;
                 pendingAircraftID = null;
-                Debug.Log($"✅ Траектория применена для {aircraftID}");
+                Debug.Log($"Траектория применена для {aircraftID}");
             }
         }
     }
@@ -647,31 +655,6 @@ public class RadarManager : MonoBehaviour
         }
 
         return null;
-    }
-
-    private void CreateDestinationZone()
-    {
-        GameObject zoneObj = new GameObject("DestinationZone", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-        zoneObj.transform.SetParent(radarArea, false);
-
-        destinationZoneImage = zoneObj.GetComponent<Image>();
-        destinationZoneRect = zoneObj.GetComponent<RectTransform>();
-
-        destinationZoneRect.anchorMin = Vector2.zero;
-        destinationZoneRect.anchorMax = Vector2.zero;
-        destinationZoneRect.pivot = new Vector2(0.5f, 0.5f);
-
-        // Создаём спрайт
-        Texture2D tex = new Texture2D(1, 1);
-        tex.SetPixel(0, 0, Color.white);
-        tex.Apply();
-        destinationZoneImage.sprite = Sprite.Create(tex, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f));
-
-        destinationZoneImage.color = destinationZoneColor;
-        destinationZoneImage.raycastTarget = false;
-        destinationZoneImage.gameObject.SetActive(false);
-
-        Debug.Log("✅ Destination zone создана");
     }
 
     private void ShowZone(Image zoneImage, RectTransform zoneRect, Vector2 normPos, float width, Color color)
@@ -733,7 +716,6 @@ public class RadarManager : MonoBehaviour
         targetZoneRect = targetObj.GetComponent<RectTransform>();
         SetupZone(targetZoneImage, targetZoneRect, targetZoneColor);
 
-        Debug.Log("✅ Зоны созданы");
     }
 
     private void SetupZone(Image img, RectTransform rect, Color color)

@@ -71,8 +71,6 @@ public class RadioController : MonoBehaviour
 
     public void TryConnect()
     {
-        Debug.Log($"=== ПОПЫТКА СВЯЗИ: {currentFullID} ===");
-
         if (radarManager == null)
         {
             ShowStatus("ОШИБКА СИСТЕМЫ", Color.red);
@@ -100,8 +98,6 @@ public class RadioController : MonoBehaviour
 
             if (statusLight != null)
                 StartCoroutine(FlashStatusLight(Color.green));
-
-            Debug.Log($"[УСПЕХ] Связь установлена с {currentFullID}");
         }
         else
         {
@@ -154,8 +150,6 @@ public class RadioController : MonoBehaviour
 
     public void SetPendingTrajectory(string aircraftID, Vector2 target)
     {
-        // Этот метод будет вызываться из RadarManager при фиксации траектории
-        // Пока можно оставить пустым или добавить отладку
-        Debug.Log($"[РАДИО] Получена траектория для {aircraftID}: {target}");
+       
     }
 }

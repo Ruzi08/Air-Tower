@@ -69,7 +69,6 @@ public class NumberRegulator : MonoBehaviour, Interactable
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
 
-        Debug.Log("Начало вращения регулятора");
 
         // Ждем пока игрок не отпустит E
         while (Input.GetKey(KeyCode.Mouse0))
@@ -123,7 +122,6 @@ public class NumberRegulator : MonoBehaviour, Interactable
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
 
-        Debug.Log("Вращение регулятора закончено");
     }
 
     private void UpdateDisplay()

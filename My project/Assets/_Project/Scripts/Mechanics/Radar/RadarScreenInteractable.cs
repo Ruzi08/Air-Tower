@@ -60,7 +60,6 @@ public class RadarScreenInteractable : MonoBehaviour, Interactable
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
 
-        Debug.Log("Радар активирован - камера переключена");
     }
 
     private void DeactivateRadar()
@@ -80,7 +79,6 @@ public class RadarScreenInteractable : MonoBehaviour, Interactable
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
 
-        Debug.Log("Радар деактивирован - камера игрока возвращена");
     }
 
     // Update is called once per frame

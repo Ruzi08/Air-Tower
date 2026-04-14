@@ -1663,7 +1663,7 @@ MonoBehaviour:
   aircraftPrefab: {fileID: 7273810107570899390, guid: c3afc975553d57447b32848f29886f1b, type: 3}
   aircraftContainer: {fileID: 0}
   spawnInterval: 2
-  maxAircrafts: 10
+  maxAircrafts: 5
   minSpeed: 0.01
   maxSpeed: 0.03
   collisionRadius: 0.04
@@ -1672,7 +1672,12 @@ MonoBehaviour:
   trajectoryLineWidth: 0.25
   trajectoryLineColor: {r: 0, g: 1, b: 0, a: 1}
   editLineColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  editLineWidth: 0.25
+  editLineWidth: 0.15
+  rotationSpeed: 30
+  destinationZoneColor: {r: 1, g: 0.5, b: 0, a: 0.5}
+  destinationZoneWidth: 0.15
+  targetZoneColor: {r: 0, g: 1, b: 0, a: 0.4}
+  targetZoneWidth: 0.12
 --- !u!4 &2013001742
 Transform:
   m_ObjectHideFlags: 0
@@ -2199,8 +2204,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3836695153070646343}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 10.858235, y: -0.00000085693205, z: -1.2066789}
+  m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0.97, y: -0.00000086426735, z: 6.46}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -2211,7 +2216,7 @@ Transform:
   - {fileID: 5088408022112195105}
   - {fileID: 1751341753}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: -90, z: 0}
 --- !u!1 &4645612056200657522
 GameObject:
   m_ObjectHideFlags: 0
@@ -2245,7 +2250,7 @@ GameObject:
   - component: {fileID: 5928886524329212679}
   - component: {fileID: 5928886524329212681}
   - component: {fileID: 5928886524329212680}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: SendSignal
   m_TagString: Untagged
   m_Icon: {fileID: 0}

@@ -38,6 +38,8 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
     private float progress = 0f;
     private bool isSelected = false;
 
+    public System.Action<AircraftController, bool> OnDestinationReached;
+
     public float Speed
     {
         get => moveSpeed;
@@ -75,8 +77,6 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
         endPosNorm = end;
         targetZoneNorm = target;
         progress = 0f;
-        Debug.Log($"Initialize: parentRect size = {parentRect.rect.size}");
-        Debug.Log($"Canvas scale: {parentRect.lossyScale}");
 
         // Сбрасываем anchor в Top-Left для правильного позиционирования
         rectTransform.anchorMin = Vector2.zero;
@@ -102,6 +102,8 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
 
         if (progress >= 1f)
         {
+            bool hitTarget = CheckIfHitTarget();
+            OnDestinationReached?.Invoke(this, hitTarget);
             // Самолет достиг точки назначения
             OnReachedDestination?.Invoke(this);
             Destroy(gameObject);
@@ -264,7 +266,16 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
         endPosNorm = newEndNorm;
         progress = 0f;
 
-        Debug.Log($"✈️ Самолет {aircraftID} летит на новую цель: {endPosNorm}");
+    }
+
+
+    private bool CheckIfHitTarget()
+    {
+        // Порог сравнения (допустимая погрешность)
+        float threshold = 0.05f;
+
+        // Проверяем, что конечная точка близка к целевой зоне
+        return Vector2.Distance(endPosNorm, targetZoneNorm) < threshold;
     }
 
 }
