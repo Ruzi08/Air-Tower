@@ -8,14 +8,14 @@ public class InteractiveBook : MonoBehaviour, Interactable
     [Header("Страницы книги")]
     [TextArea(3, 10)]
     public string[] pages;
-    public Sprite[] pageImages;  // Картинки для страниц
+    public Sprite[] pageImages;
     public int currentPage = 0;
     
     [Header("UI отображение")]
     public GameObject bookUI;
     public TextMeshProUGUI pageText;
     public TextMeshProUGUI pageNumber;
-    public Image pageImage;  // UI Image для картинок
+    public Image pageImage;
     
     [Header("Управление")]
     public KeyCode nextPageKey = KeyCode.D;
@@ -36,6 +36,9 @@ public class InteractiveBook : MonoBehaviour, Interactable
     private bool isOpen = false;
     private bool isAnimating = false;
     
+    // Ссылка на прицел
+    private CrosshairController crosshair;
+    
     void Start()
     {
         GameObject player = GameObject.FindGameObjectWithTag("Player");
@@ -48,6 +51,9 @@ public class InteractiveBook : MonoBehaviour, Interactable
         originalPosition = transform.position;
         originalRotation = transform.rotation;
         originalParent = transform.parent;
+        
+        // Находим прицел
+        crosshair = FindObjectOfType<CrosshairController>();
         
         if (pages == null || pages.Length == 0)
         {
@@ -83,6 +89,10 @@ public class InteractiveBook : MonoBehaviour, Interactable
         
         if (playerController != null)
             playerController.LockAll();
+        
+        // Скрываем прицел
+        if (crosshair != null)
+            crosshair.gameObject.SetActive(false);
         
         transform.SetParent(playerCamera);
         StartCoroutine(AnimateOpen());
@@ -145,15 +155,17 @@ public class InteractiveBook : MonoBehaviour, Interactable
         
         if (playerController != null)
             playerController.UnlockAll();
+        
+        // Показываем прицел обратно
+        if (crosshair != null)
+            crosshair.gameObject.SetActive(true);
     }
     
     private void UpdatePageDisplay()
     {
-        // Обновляем текст
         if (pageText != null)
             pageText.text = pages[currentPage];
         
-        // Обновляем картинку
         if (pageImage != null)
         {
             if (pageImages != null && currentPage < pageImages.Length && pageImages[currentPage] != null)
@@ -167,7 +179,6 @@ public class InteractiveBook : MonoBehaviour, Interactable
             }
         }
         
-        // Обновляем номер страницы
         if (pageNumber != null)
             pageNumber.text = $"{currentPage + 1} / {pages.Length}";
     }
