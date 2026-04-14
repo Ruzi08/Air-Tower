@@ -15,6 +15,14 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, Interacta
     [SerializeField] private Color normalColor = Color.white;
     [SerializeField] private Color selectedColor = Color.green;
 
+    [Header("Identification")]
+    [SerializeField] private string aircraftID; 
+    [SerializeField] private bool generateIDOnAwake = true;
+
+    private static int lastGeneratedNumber = 0;
+    private static System.Random random = new System.Random();
+
+
     private RectTransform parentRect; // Размер области радара
     private float progress = 0f;
     private bool isSelected = false;
@@ -25,9 +33,13 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, Interacta
         set => moveSpeed = value;
     }
 
+    public string AircraftID => aircraftID;
+
+    public System.Action<string> OnIDGenerated;
     public System.Action<AircraftController> OnSelected;
     public System.Action<AircraftController> OnReachedDestination;
     public System.Action<AircraftController> OnDestroyed;
+
 
     public Vector2 StartPositionWorld => NormToWorld(startPosNorm);
     public Vector2 EndPositionWorld => NormToWorld(endPosNorm);
@@ -38,6 +50,10 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, Interacta
     {
         if (rectTransform == null) rectTransform = GetComponent<RectTransform>();
         if (aircraftImage == null) aircraftImage = GetComponent<Image>();
+        if (generateIDOnAwake && string.IsNullOrEmpty(aircraftID))
+        {
+            GenerateNewID();
+        }
     }
 
     public void Initialize(RectTransform radarArea, Vector2 start, Vector2 end)
@@ -89,10 +105,6 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, Interacta
         Vector2 newPos = NormToWorld(currentNorm);
         rectTransform.anchoredPosition = newPos;
 
-        if (progress < 0.1f) // Выведем только первые 10% пути
-        {
-            Debug.Log($"Позиция самолета: {newPos}, Размер родителя: {parentRect.rect.size}");
-        }
     }
 
     private Vector2 NormToWorld(Vector2 norm)
@@ -111,7 +123,6 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, Interacta
         float x = norm.x * size.x;
         float y = norm.y * size.y;
 
-        Debug.Log($"NormToWorld: norm={norm}, size={size}, result=({x}, {y})");
 
         return new Vector2(x, y);
     }
@@ -123,7 +134,7 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, Interacta
 
     public string GetDescription()
     {
-        return $"Самолет\nТраектория: {startPosNorm} -> {endPosNorm}\nПрогресс: {(progress * 100f):F1}%";
+        return $"ID: {aircraftID}\nТраектория: ({startPosNorm.x:F2}, {startPosNorm.y:F2}) → ({endPosNorm.x:F2}, {endPosNorm.y:F2})\nПрогресс: {(progress * 100f):F1}%";
     }
 
     public void OnPointerClick(PointerEventData eventData)
@@ -158,6 +169,33 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, Interacta
         if (other == null) return false;
         float distance = Vector2.Distance(CurrentPosition, other.CurrentPosition);
         return distance < checkRadius * parentRect.rect.width; // Переводим радиус в пиксели
+    }
+
+    public void GenerateNewID()
+    {
+        aircraftID = GenerateUniqueAircraftID();
+        gameObject.name = $"Aircraft_{aircraftID}";
+
+        OnIDGenerated?.Invoke(aircraftID);
+
+    }
+
+    public void SetID(string newID)
+    {
+        aircraftID = newID;
+        gameObject.name = $"Aircraft_{aircraftID}";
+        OnIDGenerated?.Invoke(aircraftID);
+    }
+
+    private static string GenerateUniqueAircraftID()
+    {
+        char letter1 = (char)random.Next('A', 'Z' + 1);
+        char letter2 = (char)random.Next('A', 'Z' + 1);
+
+        lastGeneratedNumber = (lastGeneratedNumber + 1) % 100;
+        string number = lastGeneratedNumber.ToString("D2");
+
+        return $"{letter1}{letter2}{number}";
     }
 
     private void OnDestroy()

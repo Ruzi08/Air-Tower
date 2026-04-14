@@ -20,12 +20,15 @@ public class RadarManager : MonoBehaviour
 
     [Header("UI - Selection Display")]
     [SerializeField] private Text infoText;
-    [SerializeField] private LineRenderer trajectoryLinePrefab;
+    [SerializeField] private GameObject trajectoryLinePrefab;
+    [SerializeField] private float trajectoryLineWidth = 2f;
+    [SerializeField] private Color trajectoryLineColor = Color.green;
 
     // Внутренние данные
     private List<AircraftController> activeAircrafts = new List<AircraftController>();
     private AircraftController selectedAircraft;
-    private LineRenderer activeTrajectoryLine;
+    private Image trajectoryLineImage;
+    private RectTransform trajectoryLineRect;
     private float spawnTimer;
     private bool isInitialized = false;
 
@@ -36,9 +39,7 @@ public class RadarManager : MonoBehaviour
     }
 
     private void Start()
-    {
-        Debug.Log("RadarManager Start");
-
+    { 
 
 
         if (radarArea == null)
@@ -67,10 +68,27 @@ public class RadarManager : MonoBehaviour
         // Создаем линию траектории
         if (trajectoryLinePrefab != null)
         {
-            activeTrajectoryLine = Instantiate(trajectoryLinePrefab, radarArea);
-            activeTrajectoryLine.gameObject.SetActive(false);
+            GameObject lineObj = Instantiate(trajectoryLinePrefab, radarArea);
 
-            SetupLineRendererForUI();
+            trajectoryLineImage = lineObj.GetComponent<Image>();
+            trajectoryLineRect = lineObj.GetComponent<RectTransform>();
+
+            trajectoryLineImage.type = Image.Type.Tiled;
+            trajectoryLineImage.sprite = CreateDashedSprite();
+            trajectoryLineImage.pixelsPerUnitMultiplier = 100f;
+
+            // ВАЖНО: Сбрасываем всё на нули
+            trajectoryLineRect.anchorMin = Vector2.zero;
+            trajectoryLineRect.anchorMax = Vector2.zero;
+            trajectoryLineRect.pivot = new Vector2(0, 0.5f);
+            trajectoryLineRect.anchoredPosition = Vector2.zero;
+            trajectoryLineRect.localPosition = Vector3.zero;
+            trajectoryLineRect.localScale = Vector3.one;
+
+            trajectoryLineImage.color = Color.green;
+            trajectoryLineImage.raycastTarget = false;
+
+            trajectoryLineImage.gameObject.SetActive(false);
         }
 
         // Убеждаемся, что контейнер существует
@@ -80,11 +98,6 @@ public class RadarManager : MonoBehaviour
         }
 
         isInitialized = true;
-
-        if (trajectoryLinePrefab == null)
-        {
-            Debug.Log("pizdesc");
-        }
     }
 
     private void InitializeContainer()
@@ -134,7 +147,6 @@ public class RadarManager : MonoBehaviour
 
     private void SpawnAircraft()
     {
-        Debug.Log("SpawnAircraft вызван");
 
         // ПРОВЕРЯЕМ ВСЕ УСЛОВИЯ
         if (!isInitialized)
@@ -237,7 +249,6 @@ public class RadarManager : MonoBehaviour
 
                 if (a1.WillCollideWith(a2, collisionRadius))
                 {
-                    Debug.Log($"Столкновение! {a1.name} и {a2.name}");
                     Destroy(a1.gameObject);
                     Destroy(a2.gameObject);
                 }
@@ -245,23 +256,28 @@ public class RadarManager : MonoBehaviour
         }
     }
 
-    private void SetupLineRendererForUI()
+    public void SelectAircraftByID(string id)
     {
-        if (activeTrajectoryLine == null) return;
+        if (string.IsNullOrEmpty(id))
+        {
+            Debug.LogWarning("SelectAircraftByID: передан пустой ID");
+            return;
+        }
 
-        // Важно для UI: линия должна быть в том же слое/порядке
-        activeTrajectoryLine.sortingOrder = 1; // Поверх самолетов
-        activeTrajectoryLine.useWorldSpace = false; // Используем локальные координаты родителя
+        foreach (var aircraft in activeAircrafts)
+        {
+            if (aircraft != null && aircraft.AircraftID == id)
+            {
+                HandleAircraftSelected(aircraft);
+                return;
+            }
+        }
 
-        // Настройка ширины
-        activeTrajectoryLine.startWidth = 2f;
-        activeTrajectoryLine.endWidth = 2f;
+        Debug.LogWarning($"SelectAircraftByID: самолет с ID {id} не найден");
     }
 
     private void HandleAircraftSelected(AircraftController ac)
     {
-        Debug.Log($"=== ВЫБРАН САМОЛЕТ: {ac.name} ===");
-        Debug.Log($"activeTrajectoryLine существует: {activeTrajectoryLine != null}");
         if (selectedAircraft != null && selectedAircraft != ac)
         {
             selectedAircraft.SetSelected(false);
@@ -274,32 +290,97 @@ public class RadarManager : MonoBehaviour
             infoText.text = ac.GetDescription();
         }
 
-        if (activeTrajectoryLine != null)
+        if (trajectoryLineImage != null)
         {
-            activeTrajectoryLine.gameObject.SetActive(true);
+            trajectoryLineImage.gameObject.SetActive(true);
             UpdateTrajectoryLine();
         }
     }
 
     private void UpdateTrajectoryLine()
     {
-        if (activeTrajectoryLine == null || selectedAircraft == null)
+        if (trajectoryLineImage == null || selectedAircraft == null)
         {
-            if (activeTrajectoryLine != null) activeTrajectoryLine.gameObject.SetActive(false);
+            if (trajectoryLineImage != null)
+                trajectoryLineImage.gameObject.SetActive(false);
             return;
         }
 
-        Vector3 startPos = selectedAircraft.StartPositionWorld;
-        Vector3 endPos = selectedAircraft.EndPositionWorld;
-        Vector3 currentPos = selectedAircraft.CurrentPosition;
+        // Получаем позиции в UI координатах
+        Vector2 start = selectedAircraft.CurrentPosition;
+        Vector2 end = selectedAircraft.EndPositionWorld;
 
-        activeTrajectoryLine.positionCount = 2;
-        activeTrajectoryLine.SetPosition(0, currentPos);
-        activeTrajectoryLine.SetPosition(1, endPos);
+
+        Vector2 direction = end - start;
+        float distance = direction.magnitude;
+
+        if (distance < 1f)
+        {
+            trajectoryLineImage.gameObject.SetActive(false);
+            return;
+        }
+
+        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+
+        // ВАЖНО: Используем anchoredPosition (UI координаты)
+        trajectoryLineRect.anchoredPosition = start;
+        trajectoryLineRect.sizeDelta = new Vector2(distance, trajectoryLineWidth);
+        trajectoryLineRect.localRotation = Quaternion.Euler(0, 0, angle);
+
+        trajectoryLineImage.color = trajectoryLineColor;
+        trajectoryLineImage.gameObject.SetActive(true);
+
+    }
+
+    private Sprite CreateDashedSprite()
+    {
+        int width = 32;
+        int height = 4;
+
+        Texture2D texture = new Texture2D(width, height);
+        Color[] colors = new Color[width * height];
+
+        // Создаём паттерн: 4 пикселя цвет, 4 пикселя прозрачный
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                // Каждые 8 пикселей меняем цвет
+                bool isColored = (x / 4) % 2 == 0;
+                colors[y * width + x] = isColored ? Color.white : Color.clear;
+            }
+        }
+
+        texture.SetPixels(colors);
+        texture.Apply();
+        texture.wrapMode = TextureWrapMode.Repeat;
+
+        return Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f));
     }
 
     private void HandleAircraftReachedDestination(AircraftController ac)
     {
+    }
+
+    public bool IsAircraftExists(string id)
+    {
+        if (string.IsNullOrEmpty(id))
+        {
+            Debug.LogWarning("IsAircraftExists: передан пустой ID");
+            return false;
+        }
+
+        foreach (var aircraft in activeAircrafts)
+        {
+            if (aircraft != null && aircraft.AircraftID == id)
+            {
+                Debug.Log($"Самолет с ID {id} найден на радаре");
+                return true;
+            }
+        }
+
+        Debug.Log($"Самолет с ID {id} не найден. Активных самолетов: {activeAircrafts.Count}");
+        return false;
     }
 
     private void HandleAircraftDestroyed(AircraftController ac)
@@ -307,8 +388,10 @@ public class RadarManager : MonoBehaviour
         if (selectedAircraft == ac)
         {
             selectedAircraft = null;
-            if (activeTrajectoryLine != null) activeTrajectoryLine.gameObject.SetActive(false);
-            if (infoText != null) infoText.text = "Выберите самолет";
+            if (trajectoryLineImage != null)
+                trajectoryLineImage.gameObject.SetActive(false);
+            if (infoText != null)
+                infoText.text = "Выберите самолет";
         }
 
         activeAircrafts.Remove(ac);
