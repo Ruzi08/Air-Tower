@@ -1671,6 +1671,8 @@ MonoBehaviour:
   trajectoryLinePrefab: {fileID: 7448471348955305530, guid: 729163fed419deb468ef1ffa4b6d260d, type: 3}
   trajectoryLineWidth: 0.25
   trajectoryLineColor: {r: 0, g: 1, b: 0, a: 1}
+  editLineColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  editLineWidth: 0.25
 --- !u!4 &2013001742
 Transform:
   m_ObjectHideFlags: 0

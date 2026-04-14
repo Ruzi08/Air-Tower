@@ -1,8 +1,9 @@
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
+using static UnityEngine.GraphicsBuffer;
 
-public class AircraftController : MonoBehaviour, IPointerClickHandler, Interactable
+public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IPointerUpHandler, Interactable
 {
     [Header("Movement")]
     [SerializeField] private Vector2 startPosNorm; // 0..1
@@ -19,6 +20,16 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, Interacta
     [SerializeField] private string aircraftID; 
     [SerializeField] private bool generateIDOnAwake = true;
 
+    [Header("Target Zone")]
+    [SerializeField] private Vector2 targetZoneNorm;
+
+    public Vector2 TargetZoneNorm => targetZoneNorm;
+    public Vector2 TargetZoneWorld => NormToWorld(targetZoneNorm);
+
+    private bool isPointerDown = false;
+    private float pointerDownTime = 0f;
+    [SerializeField] private float holdTimeToEdit = 0.3f;
+
     private static int lastGeneratedNumber = 0;
     private static System.Random random = new System.Random();
 
@@ -34,6 +45,7 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, Interacta
     }
 
     public string AircraftID => aircraftID;
+    public Vector2 EndPosNorm => endPosNorm;
 
     public System.Action<string> OnIDGenerated;
     public System.Action<AircraftController> OnSelected;
@@ -56,11 +68,12 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, Interacta
         }
     }
 
-    public void Initialize(RectTransform radarArea, Vector2 start, Vector2 end)
+    public void Initialize(RectTransform radarArea, Vector2 start, Vector2 end,Vector2 target)
     {
         parentRect = radarArea;
         startPosNorm = start;
         endPosNorm = end;
+        targetZoneNorm = target;
         progress = 0f;
         Debug.Log($"Initialize: parentRect size = {parentRect.rect.size}");
         Debug.Log($"Canvas scale: {parentRect.lossyScale}");
@@ -214,4 +227,44 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, Interacta
         Gizmos.DrawSphere(startWorld, 5f);
         Gizmos.DrawSphere(endWorld, 5f);
     }
+
+    public void OnPointerDown(PointerEventData eventData)
+    {
+        // Только если самолет уже выделен
+        if (!isSelected) return;
+
+        isPointerDown = true;
+        pointerDownTime = Time.time;
+        CancelInvoke(nameof(StartEditMode));
+        Invoke(nameof(StartEditMode), holdTimeToEdit);
+    }
+
+    public void OnPointerUp(PointerEventData eventData)
+    {
+        isPointerDown = false;
+        CancelInvoke(nameof(StartEditMode));
+    }
+
+    private void StartEditMode()
+    {
+        if (isPointerDown && isSelected)
+        {
+            RadarManager radar = FindFirstObjectByType<RadarManager>();
+            if (radar != null)
+            {
+                radar.StartEditMode();
+            }
+        }
+    }
+
+    public void SetNewDestination(Vector2 newEndNorm)
+    {
+        Vector2 currentNorm = Vector2.Lerp(startPosNorm, endPosNorm, progress);
+        startPosNorm = currentNorm;
+        endPosNorm = newEndNorm;
+        progress = 0f;
+
+        Debug.Log($"✈️ Самолет {aircraftID} летит на новую цель: {endPosNorm}");
+    }
+
 }

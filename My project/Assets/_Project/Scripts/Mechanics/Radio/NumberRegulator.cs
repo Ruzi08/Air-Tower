@@ -111,6 +111,7 @@ public class NumberRegulator : MonoBehaviour, Interactable
             yield return null;
         }
 
+
         // Заканчиваем перетаскивание
         isDragging = false;
 
@@ -118,6 +119,9 @@ public class NumberRegulator : MonoBehaviour, Interactable
         {
             dialRenderer.material = defaultMaterial;
         }
+
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
 
         Debug.Log("Вращение регулятора закончено");
     }

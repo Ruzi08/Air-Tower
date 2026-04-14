@@ -88,6 +88,8 @@ public class RadioController : MonoBehaviour
 
         if (exists)
         {
+            radarManager.ApplyPendingTrajectory(currentFullID);
+
             ShowStatus($"СВЯЗЬ: {currentFullID}", Color.green);
             PlaySound(connectSound);
 
@@ -148,5 +150,12 @@ public class RadioController : MonoBehaviour
     public string GetCurrentID()
     {
         return currentFullID;
+    }
+
+    public void SetPendingTrajectory(string aircraftID, Vector2 target)
+    {
+        // Этот метод будет вызываться из RadarManager при фиксации траектории
+        // Пока можно оставить пустым или добавить отладку
+        Debug.Log($"[РАДИО] Получена траектория для {aircraftID}: {target}");
     }
 }
