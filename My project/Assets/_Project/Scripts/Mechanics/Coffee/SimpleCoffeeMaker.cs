@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections;
 
-public class SimpleCoffeeMaker : Sound, Interactable
+public class SimpleCoffeeMaker : MonoBehaviour, Interactable
 {
     [Header("=== НАСТРОЙКИ ===")]
     public float boilTime = 10f;
@@ -21,6 +21,7 @@ public class SimpleCoffeeMaker : Sound, Interactable
     [Header("=== АНИМАЦИЯ КРУЖКИ ===")]
     public Transform cupAnchor;
     public float cupFlySpeed = 10f;
+    public Vector3 cupFaceRotation = new Vector3(0, 180, 0);
     
     [Header("=== ССЫЛКИ ===")]
     public FatigueManager fatigueManager;
@@ -34,7 +35,18 @@ public class SimpleCoffeeMaker : Sound, Interactable
     public ParticleSystem steamParticles;
     public ParticleSystem pourParticles;
     
-    // Сохраняем исходные данные кружки
+    [Header("=== ЛАМПОЧКА ===")]
+    public Material bulbIdleMaterial;
+    public Material bulbBoilingMaterial;
+    public Material bulbReadyMaterial;
+    public int bulbMaterialIndex = 1;
+    
+    [Header("=== ЗВУКИ ===")]
+    public SimpleSound clickSound;
+    public SimpleSound boilSound;
+    public SimpleSound pourSound;
+    public SimpleSound drinkSound;
+    
     private Vector3 kettleOriginalPosition;
     private Quaternion kettleOriginalRotation;
     private Vector3 cupOriginalPosition;
@@ -46,12 +58,7 @@ public class SimpleCoffeeMaker : Sound, Interactable
     private bool isDrinking = false;
     private FirstPersonController playerController;
     
-    protected override void Awake()
-    {
-        base.Awake();
-    }
-    
-    protected override void Start()
+    void Start()
     {
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
@@ -83,7 +90,7 @@ public class SimpleCoffeeMaker : Sound, Interactable
         if (pourParticles != null)
             pourParticles.Stop();
         
-        StopSnd();
+        SetBulbMaterial(bulbIdleMaterial);
     }
     
     void Update()
@@ -99,9 +106,28 @@ public class SimpleCoffeeMaker : Sound, Interactable
                 if (steamParticles != null)
                     steamParticles.Stop();
                 
-                StopSnd();
+                if (boilSound != null)
+                    boilSound.Stop();
+                
+                SetBulbMaterial(bulbReadyMaterial);
+                
                 Debug.Log("🔥 Чайник закипел!");
             }
+        }
+    }
+    
+    private void SetBulbMaterial(Material material)
+    {
+        if (material == null) return;
+        
+        Renderer renderer = GetComponent<Renderer>();
+        if (renderer == null) return;
+        
+        Material[] materials = renderer.materials;
+        if (bulbMaterialIndex < materials.Length)
+        {
+            materials[bulbMaterialIndex] = material;
+            renderer.materials = materials;
         }
     }
     
@@ -109,8 +135,8 @@ public class SimpleCoffeeMaker : Sound, Interactable
     {
         if (isPouring || isDrinking) return;
         
-        if (sounds != null && sounds.Length > 0 && sounds[0] != null)
-            PlaySnd(sounds[0], volume: 0.5f);
+        if (clickSound != null)
+            clickSound.Play();
         
         if (isCoffeeReady)
         {
@@ -134,8 +160,10 @@ public class SimpleCoffeeMaker : Sound, Interactable
         if (steamParticles != null)
             steamParticles.Play();
         
-        if (sounds != null && sounds.Length > 0 && sounds[0] != null)
-            PlaySnd(sounds[0], volume: maxVolume, loop: true);
+        SetBulbMaterial(bulbBoilingMaterial);
+        
+        if (boilSound != null)
+            boilSound.Play();
         
         Debug.Log("🫖 Чайник начал кипеть!");
     }
@@ -165,8 +193,8 @@ public class SimpleCoffeeMaker : Sound, Interactable
             yield return null;
         }
         
-        if (sounds != null && sounds.Length > 0 && sounds[0] != null)
-            PlaySnd(sounds[0], volume: maxVolume);
+        if (pourSound != null)
+            pourSound.Play();
         
         if (pourParticles != null)
             pourParticles.Play();
@@ -197,83 +225,78 @@ public class SimpleCoffeeMaker : Sound, Interactable
         Debug.Log("☕ Кофе заварен! Нажми на кружку");
     }
     
-IEnumerator DrinkCoffee()
-{
-    if (isDrinking) yield break;
-    isDrinking = true;
-    
-    if (playerController != null)
-        playerController.LockAll();
-    
-    if (cup != null && cupAnchor != null)
+    IEnumerator DrinkCoffee()
     {
-        // Сохраняем исходные данные
-        Transform originalParent = cup.transform.parent;
-        Vector3 originalPos = cup.transform.position;
-        Quaternion originalRot = cup.transform.rotation;
-        Vector3 originalScale = cup.transform.localScale;
+        if (isDrinking) yield break;
+        isDrinking = true;
         
-        // Отключаем коллайдер на время полёта
-        Collider cupCollider = cup.GetComponent<Collider>();
-        if (cupCollider != null) cupCollider.enabled = false;
+        if (playerController != null)
+            playerController.LockAll();
         
-        // Анимация полёта к камере (позиция + поворот)
-        float t = 0;
-        Vector3 startPosWorld = cup.transform.position;
-        Quaternion startRotWorld = cup.transform.rotation;
-        Vector3 targetPosWorld = cupAnchor.position;
-        Quaternion targetRotWorld = cupAnchor.rotation;
-        
-        while (t < 1)
+        if (cup != null && cupAnchor != null)
         {
-            t += Time.deltaTime * cupFlySpeed;
-            cup.transform.position = Vector3.Lerp(startPosWorld, targetPosWorld, t);
-            cup.transform.rotation = Quaternion.Lerp(startRotWorld, targetRotWorld, t);
-            yield return null;
+            Transform originalParent = cup.transform.parent;
+            Vector3 originalPos = cup.transform.position;
+            Quaternion originalRot = cup.transform.rotation;
+            Vector3 originalScale = cup.transform.localScale;
+            
+            Collider cupCollider = cup.GetComponent<Collider>();
+            if (cupCollider != null) cupCollider.enabled = false;
+            
+            float t = 0;
+            Vector3 startPosWorld = cup.transform.position;
+            Vector3 targetPosWorld = cupAnchor.position;
+            
+            while (t < 1)
+            {
+                t += Time.deltaTime * cupFlySpeed;
+                cup.transform.position = Vector3.Lerp(startPosWorld, targetPosWorld, t);
+                yield return null;
+            }
+            
+            cup.transform.LookAt(playerCamera);
+            cup.transform.Rotate(cupFaceRotation);
+            
+            if (drinkSound != null)
+                drinkSound.Play();
+            
+            yield return new WaitForSeconds(1f);
+            
+            t = 0;
+            startPosWorld = cup.transform.position;
+            
+            while (t < 1)
+            {
+                t += Time.deltaTime * cupFlySpeed;
+                cup.transform.position = Vector3.Lerp(startPosWorld, originalPos, t);
+                cup.transform.rotation = Quaternion.Lerp(cup.transform.rotation, originalRot, t);
+                yield return null;
+            }
+            
+            cup.transform.SetParent(originalParent);
+            cup.transform.position = originalPos;
+            cup.transform.rotation = originalRot;
+            cup.transform.localScale = originalScale;
+            
+            if (cupCollider != null) cupCollider.enabled = true;
         }
         
-        // Звук питья
-        if (sounds != null && sounds.Length > 0 && sounds[0] != null)
-            PlaySnd(sounds[0], volume: maxVolume);
+        SetBulbMaterial(bulbIdleMaterial);
         
-        yield return new WaitForSeconds(1f);
+        if (fatigueManager != null)
+            fatigueManager.RestoreWakeness(coffeeRestoreAmount);
         
-        // Анимация полёта обратно (позиция + поворот)
-        t = 0;
-        startPosWorld = cup.transform.position;
-        startRotWorld = cup.transform.rotation;
+        if (cupRenderer != null && emptyMaterial != null)
+            cupRenderer.material = emptyMaterial;
         
-        while (t < 1)
-        {
-            t += Time.deltaTime * cupFlySpeed;
-            cup.transform.position = Vector3.Lerp(startPosWorld, originalPos, t);
-            cup.transform.rotation = Quaternion.Lerp(startRotWorld, originalRot, t);
-            yield return null;
-        }
+        isCoffeeReady = false;
+        isDrinking = false;
         
-        // Возвращаем кружку в исходное состояние
-        cup.transform.SetParent(originalParent);
-        cup.transform.position = originalPos;
-        cup.transform.rotation = originalRot;
-        cup.transform.localScale = originalScale;
+        if (playerController != null)
+            playerController.UnlockAll();
         
-        if (cupCollider != null) cupCollider.enabled = true;
+        Debug.Log($"🥤 Кофе выпит! +{coffeeRestoreAmount}% бодрости");
     }
-    
-    if (fatigueManager != null)
-        fatigueManager.RestoreWakeness(coffeeRestoreAmount);
-    
-    if (cupRenderer != null && emptyMaterial != null)
-        cupRenderer.material = emptyMaterial;
-    
-    isCoffeeReady = false;
-    isDrinking = false;
-    
-    if (playerController != null)
-        playerController.UnlockAll();
-    
-    Debug.Log($"🥤 Кофе выпит! +{coffeeRestoreAmount}% бодрости");
-}
     
     public string GetDescription()
     {
