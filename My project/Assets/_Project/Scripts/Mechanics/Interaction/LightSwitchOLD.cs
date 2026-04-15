@@ -1,7 +1,7 @@
 using UnityEngine;
 
 // Обрати внимание: мы добавляем , IInteractable после MonoBehaviour
-public class LightSwitch : MonoBehaviour, Interactable
+public class NO : MonoBehaviour, Interactable
 {
     public Light targetLight;
     private bool isLightOn = false;
