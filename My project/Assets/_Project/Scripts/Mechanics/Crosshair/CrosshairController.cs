@@ -3,6 +3,8 @@ using UnityEngine.UI;
 
 public class CrosshairController : MonoBehaviour
 {
+    public static CrosshairController Instance;  // ← ДОБАВИТЬ
+
     [Header("Обычное состояние")]
     public Vector2 normalSize = new Vector2(5, 5);
     public Color normalColor = Color.white;
@@ -23,8 +25,9 @@ public class CrosshairController : MonoBehaviour
     private Color currentColor;
     private float currentAlpha;
     
-    void Start()
+    void Awake()  // ← Awake вместо Start для синглтона
     {
+        Instance = this;
         crosshairImage = GetComponent<Image>();
         rectTransform = GetComponent<RectTransform>();
         
@@ -34,16 +37,12 @@ public class CrosshairController : MonoBehaviour
             return;
         }
         
-        // Устанавливаем начальные значения
         SetCrosshairNormal();
     }
     
     void Update()
     {
-        // Плавное изменение размера
         rectTransform.sizeDelta = Vector2.Lerp(rectTransform.sizeDelta, currentSize, Time.deltaTime * lerpSpeed);
-        
-        // Плавное изменение цвета и прозрачности
         crosshairImage.color = Color.Lerp(crosshairImage.color, currentColor, Time.deltaTime * lerpSpeed);
     }
     
@@ -57,5 +56,18 @@ public class CrosshairController : MonoBehaviour
     {
         currentSize = highlightSize;
         currentColor = new Color(highlightColor.r, highlightColor.g, highlightColor.b, highlightAlpha);
+    }
+    
+    // Добавляем методы Show/Hide
+    public void Show()
+    {
+        if (crosshairImage != null)
+            crosshairImage.enabled = true;
+    }
+    
+    public void Hide()
+    {
+        if (crosshairImage != null)
+            crosshairImage.enabled = false;
     }
 }

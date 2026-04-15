@@ -17,7 +17,7 @@ public class RadarScreenInteractable : MonoBehaviour, Interactable
     [SerializeField] private float transitionTime = 0f;
 
     private bool isUsingRadar = false;
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+
     void Start()
     {
         if (playerCamera == null)
@@ -47,6 +47,10 @@ public class RadarScreenInteractable : MonoBehaviour, Interactable
     {
         isUsingRadar = true;
 
+        // Скрываем точку в центре экрана
+        if (CrosshairController.Instance != null)
+            CrosshairController.Instance.Hide();
+
         if (playerCamera != null)
             playerCamera.gameObject.SetActive(false);
         if (radarCamera != null)
@@ -59,11 +63,14 @@ public class RadarScreenInteractable : MonoBehaviour, Interactable
 
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
-
     }
 
     private void DeactivateRadar()
     {
+        // Показываем точку обратно
+        if (CrosshairController.Instance != null)
+            CrosshairController.Instance.Show();
+
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
 
@@ -78,10 +85,8 @@ public class RadarScreenInteractable : MonoBehaviour, Interactable
             playerController.enabled = true;
         if (cameraController != null)
             cameraController.enabled = true;
-
     }
 
-    // Update is called once per frame
     void Update()
     {
         if (isUsingRadar && Input.GetKeyDown(exitKey))
