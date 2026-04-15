@@ -1,10 +1,11 @@
 using UnityEngine;
 using System.Collections;
+using TMPro;
 
 public class NumberRegulator : MonoBehaviour, Interactable
 {
     [Header("Display")]
-    [SerializeField] private TextMesh displayText;
+    [SerializeField] private TextMeshPro displayText;
 
     [Header("Settings")]
     [SerializeField] private int minValue = 0;
