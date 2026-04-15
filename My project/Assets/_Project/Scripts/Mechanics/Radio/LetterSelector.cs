@@ -1,9 +1,10 @@
 using UnityEngine;
+using TMPro;
 
 public class LetterSelector : MonoBehaviour
 {
     [Header("Display")]
-    [SerializeField] private TextMesh displayText;
+    [SerializeField] private TextMeshPro displayText;
 
     [Header("Settings")]
     [SerializeField] private char startLetter = 'A';
