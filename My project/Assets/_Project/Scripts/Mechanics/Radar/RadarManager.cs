@@ -1,4 +1,6 @@
+using NUnit.Framework.Interfaces;
 using System.Collections.Generic;
+using System.ComponentModel;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -45,6 +47,7 @@ public class RadarManager : MonoBehaviour
     private Image editTrajectoryLineImage;
     private RectTransform editTrajectoryLineRect;
     private bool isEditingMode = false;
+    private bool isPendingTrajectoryVisible = false;
     private Vector2? pendingTrajectory = null; // Ожидающая траектория для текущего самолета
     private string pendingAircraftID = null;
 
@@ -53,6 +56,7 @@ public class RadarManager : MonoBehaviour
     private AircraftController selectedAircraft;
     private Image trajectoryLineImage;
     private RectTransform trajectoryLineRect;
+    private Vector2 direction;
     private float spawnTimer;
     private bool isInitialized = false;
 
@@ -311,6 +315,7 @@ public class RadarManager : MonoBehaviour
     {
         if (selectedAircraft != ac)
         {
+            isPendingTrajectoryVisible = false;
             CancelEditing();
         }
 
@@ -397,6 +402,7 @@ public class RadarManager : MonoBehaviour
 
     private void HandleDestinationReached(AircraftController ac, bool hitTarget)
     {
+        editTrajectoryLineImage.gameObject.SetActive(false);
         if (hitTarget)
         {
             Debug.Log($"САМОЛЁТ {ac.AircraftID} УСПЕШНО ПРИБЫЛ В ЦЕЛЕВУЮ ЗОНУ!");
@@ -436,6 +442,7 @@ public class RadarManager : MonoBehaviour
     {
         if (selectedAircraft == ac)
         {
+            editTrajectoryLineImage.gameObject.SetActive(false);
             selectedAircraft = null;
             HideAllZones();
             if (trajectoryLineImage != null)
@@ -485,44 +492,51 @@ public class RadarManager : MonoBehaviour
 
     private void HandleTrajectoryEditing()
     {
-        if (!isEditingMode || selectedAircraft == null) return;
+        
+        if (!isEditingMode && !isPendingTrajectoryVisible) return;
+        if (selectedAircraft == null) return;
 
         Vector2 startPos = selectedAircraft.CurrentPosition;
 
-        // Поворот колесиком мыши
-        float scroll = Input.GetAxis("Mouse ScrollWheel");
-        if (Mathf.Abs(scroll) > 0.001f)
+        if (isEditingMode)
         {
-            currentEditAngle += scroll * rotationSpeed;
-            Debug.Log($"Угол изменён: {currentEditAngle:F1}°");
+            float scroll = Input.GetAxis("Mouse ScrollWheel");
+            if (Mathf.Abs(scroll) > 0.001f)
+            {
+                currentEditAngle += scroll * rotationSpeed;
+                Debug.Log($"Угол изменён: {currentEditAngle:F1}°");
+            }
+
+            float angleRad = currentEditAngle * Mathf.Deg2Rad;
+            direction = new Vector2(Mathf.Cos(angleRad), Mathf.Sin(angleRad));
+
+            Vector2 edgePoint = GetEdgePoint(startPos, direction);
+            UpdateEditLine(startPos, edgePoint);
+
+            if (selectedAircraft.IsPointerDown == false)
+            {
+                isEditingMode = false;
+                isPendingTrajectoryVisible = true;
+
+                Vector2 size = radarArea.rect.size;
+                pendingTrajectory = new Vector2(edgePoint.x / size.x, edgePoint.y / size.y);
+                pendingAircraftID = selectedAircraft.AircraftID;
+            }
+
+            if (Input.GetKeyDown(KeyCode.Escape) || Input.GetMouseButtonDown(1))
+            {
+                isEditingMode = false;
+                isPendingTrajectoryVisible = false;
+                editTrajectoryLineImage.gameObject.SetActive(false);
+                CancelEditing();
+            }
         }
-
-        // Вычисляем направление по углу
-        float angleRad = currentEditAngle * Mathf.Deg2Rad;
-        Vector2 direction = new Vector2(Mathf.Cos(angleRad), Mathf.Sin(angleRad));
-
-        // Находим точку на границе
-        Vector2 edgePoint = GetEdgePoint(startPos, direction);
-
-        // Обновляем линию
-        UpdateEditLine(startPos, edgePoint);
-
-        // Сохраняем
-        Vector2 size = radarArea.rect.size;
-        pendingTrajectory = new Vector2(edgePoint.x / size.x, edgePoint.y / size.y);
-        pendingAircraftID = selectedAircraft.AircraftID;
-
-        // Фиксация по ЛКМ или Enter
-        if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Return))
+        else if (isPendingTrajectoryVisible && pendingTrajectory.HasValue)
         {
-            Debug.Log($"Траектория зафиксирована: {pendingTrajectory.Value}");
-            StopEditingMode();
-        }
-
-        // Отмена по ESC или ПКМ
-        if (Input.GetKeyDown(KeyCode.Escape) || Input.GetMouseButtonDown(1))
-        {
-            CancelEditing();
+            Vector2 size = radarArea.rect.size;
+            Vector2 targetPos = new Vector2(pendingTrajectory.Value.x * size.x, pendingTrajectory.Value.y * size.y);
+            UpdateEditLine(startPos, targetPos);
+            editTrajectoryLineImage.gameObject.SetActive(true);
         }
     }
 
@@ -597,7 +611,6 @@ public class RadarManager : MonoBehaviour
     private void StopEditingMode()
     {
         isEditingMode = false;
-        editTrajectoryLineImage.gameObject.SetActive(false);
     }
 
     private void CancelEditing()
@@ -613,6 +626,7 @@ public class RadarManager : MonoBehaviour
 
         isEditingMode = true;
         pendingTrajectory = null;
+        isPendingTrajectoryVisible = false;
 
         // Инициализируем угол текущим направлением самолёта
         Vector2 currentDir = selectedAircraft.GetDirection();
@@ -636,6 +650,8 @@ public class RadarManager : MonoBehaviour
             if (ac != null)
             {
                 ac.SetNewDestination(pendingTrajectory.Value);
+                isPendingTrajectoryVisible = false;
+                editTrajectoryLineImage.gameObject.SetActive(false);
                 pendingTrajectory = null;
                 pendingAircraftID = null;
                 Debug.Log($"Траектория применена для {aircraftID}");

@@ -64,6 +64,9 @@ public class RadarScreenInteractable : MonoBehaviour, Interactable
 
     private void DeactivateRadar()
     {
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
+
         isUsingRadar = false;
 
         if (radarCamera != null)
@@ -75,9 +78,6 @@ public class RadarScreenInteractable : MonoBehaviour, Interactable
             playerController.enabled = true;
         if (cameraController != null)
             cameraController.enabled = true;
-
-        Cursor.visible = false;
-        Cursor.lockState = CursorLockMode.Locked;
 
     }
 

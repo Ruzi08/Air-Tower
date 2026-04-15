@@ -38,8 +38,10 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
     private float progress = 0f;
     private bool isSelected = false;
 
+
     public System.Action<AircraftController, bool> OnDestinationReached;
 
+    public bool IsPointerDown => isPointerDown;
     public float Speed
     {
         get => moveSpeed;
@@ -239,6 +241,7 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
         pointerDownTime = Time.time;
         CancelInvoke(nameof(StartEditMode));
         Invoke(nameof(StartEditMode), holdTimeToEdit);
+
     }
 
     public void OnPointerUp(PointerEventData eventData)

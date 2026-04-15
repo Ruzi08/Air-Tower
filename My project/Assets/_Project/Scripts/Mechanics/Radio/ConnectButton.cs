@@ -9,6 +9,7 @@ public class ConnectButton : MonoBehaviour, Interactable
     [Header("Visual")]
     [SerializeField] private Material defaultMaterial;
     [SerializeField] private Material pressedMaterial;
+    [SerializeField] private Material hoverMaterial;
     [SerializeField] private float pressDepth = 0.01f;
 
     [Header("Indicator Light")]
@@ -105,5 +106,20 @@ public class ConnectButton : MonoBehaviour, Interactable
         yield return new WaitForSeconds(0.5f);
 
         indicatorLight.enabled = false;
+    }
+
+    private void OnMouseEnter()
+    {
+        if (!isPressed && buttonRenderer != null && hoverMaterial != null)
+        {
+            buttonRenderer.material = hoverMaterial;
+        }
+    }
+    private void OnMouseExit()
+    {
+        if (!isPressed && buttonRenderer != null && defaultMaterial != null)
+        {
+            buttonRenderer.material = defaultMaterial;
+        }
     }
 }

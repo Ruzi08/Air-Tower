@@ -20,6 +20,7 @@ public class NumberRegulator : MonoBehaviour, Interactable
     [Header("Visual")]
     [SerializeField] private Material defaultMaterial;
     [SerializeField] private Material activeMaterial;
+    [SerializeField] private Material hoverMaterial;
     private Renderer dialRenderer;
 
     [Header("Rotation (опционально)")]
@@ -138,6 +139,21 @@ public class NumberRegulator : MonoBehaviour, Interactable
         {
             float angle = (float)currentValue / maxValue * 360f;
             dialTransform.localRotation = Quaternion.Euler(rotationAxis * angle);
+        }
+    }
+
+    private void OnMouseEnter()
+    {
+        if (!isDragging && dialRenderer != null && hoverMaterial != null)
+        {
+            dialRenderer.material = hoverMaterial;
+        }
+    }
+    private void OnMouseExit()
+    {
+        if (!isDragging && dialRenderer != null && defaultMaterial != null)
+        {
+            dialRenderer.material = defaultMaterial;
         }
     }
 }
