@@ -86,7 +86,7 @@ public class RadioController : MonoBehaviour
 
         if (exists)
         {
-            radarManager.ApplyPendingTrajectory(currentFullID);
+            //radarManager.ApplyPendingTrajectory(currentFullID);
 
             ShowStatus($"СВЯЗЬ: {currentFullID}", Color.green);
             PlaySound(connectSound);

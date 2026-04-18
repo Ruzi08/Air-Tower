@@ -1,6 +1,4 @@
-using NUnit.Framework.Interfaces;
 using System.Collections.Generic;
-using System.ComponentModel;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -29,51 +27,48 @@ public class RadarManager : MonoBehaviour
     [Header("Trajectory Editing")]
     [SerializeField] private Color editLineColor = Color.yellow;
     [SerializeField] private float editLineWidth = 0.1f;
-    [SerializeField] private float rotationSpeed = 30f;
-    
+
+    [Header("Angle Display")]
+    [SerializeField] private Text angleDisplayText;
+    [SerializeField] private GameObject angleDisplayPanel;
+    [SerializeField] private Color normalAngleColor = Color.white;
+    [SerializeField] private Color warningAngleColor = Color.yellow;
+    [SerializeField] private float maxAngleWarning = 45f;
 
     [Header("Destination Zone")]
-    [SerializeField] private Color destinationZoneColor = new Color(1f, 0.5f, 0f, 0.5f); // Оранжевый полупрозрачный
+    [SerializeField] private Color destinationZoneColor = new Color(1f, 0.5f, 0f, 0.5f);
     [SerializeField] private float destinationZoneWidth = 0.15f;
 
-    [Header("Target Zone (куда НАДО)")]
-    [SerializeField] private Color targetZoneColor = new Color(0f, 1f, 0f, 0.4f); // Зелёный
+    [Header("Target Zone")]
+    [SerializeField] private Color targetZoneColor = new Color(0f, 1f, 0f, 0.4f);
     [SerializeField] private float targetZoneWidth = 0.12f;
 
+    // Компоненты
     private Image targetZoneImage;
     private RectTransform targetZoneRect;
-
-    private float currentEditAngle = 0f;
-
-    private Image editTrajectoryLineImage;
-    private RectTransform editTrajectoryLineRect;
-    private bool isEditingMode = false;
-    private bool isPendingTrajectoryVisible = false;
-    private Vector2? pendingTrajectory = null; // Ожидающая траектория для текущего самолета
-    private string pendingAircraftID = null;
-
-    // Внутренние данные
-    private List<AircraftController> activeAircrafts = new List<AircraftController>();
-    private AircraftController selectedAircraft;
     private Image trajectoryLineImage;
     private RectTransform trajectoryLineRect;
-    private Vector2 direction;
+    private Image editTrajectoryLineImage;
+    private RectTransform editTrajectoryLineRect;
+
+    // Данные
+    private List<AircraftController> activeAircrafts = new List<AircraftController>();
+    private AircraftController selectedAircraft;
     private float spawnTimer;
     private bool isInitialized = false;
-    private bool isDraggingTrajectory = false;
 
-    private Image destinationZoneImage;
-    private RectTransform destinationZoneRect;
+    // Данные редактирования траектории
+    private TrajectoryHandle trajectoryHandle;
+    private string pendingAircraftID = null;
+    private float currentPreviewDeltaAngle = 0f;
 
     private void Awake()
     {
-        // Инициализируем контейнер ДО всего остального
         InitializeContainer();
     }
 
     private void Start()
     {
-
         if (radarArea == null)
         {
             Debug.LogError("RadarManager: Radar Area не назначен!");
@@ -88,49 +83,26 @@ public class RadarManager : MonoBehaviour
             return;
         }
 
-        // Проверяем, что префаб содержит RectTransform (UI элемент)
         RectTransform prefabRect = aircraftPrefab.GetComponent<RectTransform>();
         if (prefabRect == null)
         {
-            Debug.LogError("Префаб самолета НЕ является UI элементом! Нет RectTransform. Пересоздайте префаб как UI → Image.");
+            Debug.LogError("Префаб самолета НЕ является UI элементом! Нет RectTransform.");
             enabled = false;
             return;
         }
 
-        // Создаем линию траектории
-        if (trajectoryLinePrefab != null)
-        {
-            GameObject lineObj = Instantiate(trajectoryLinePrefab, radarArea);
-
-            trajectoryLineImage = lineObj.GetComponent<Image>();
-            trajectoryLineRect = lineObj.GetComponent<RectTransform>();
-
-            trajectoryLineImage.type = Image.Type.Tiled;
-            trajectoryLineImage.sprite = CreateDashedSprite();
-            trajectoryLineImage.pixelsPerUnitMultiplier = 100f;
-
-            // ВАЖНО: Сбрасываем всё на нули
-            trajectoryLineRect.anchorMin = Vector2.zero;
-            trajectoryLineRect.anchorMax = Vector2.zero;
-            trajectoryLineRect.pivot = new Vector2(0, 0.5f);
-            trajectoryLineRect.anchoredPosition = Vector2.zero;
-            trajectoryLineRect.localPosition = Vector3.zero;
-            trajectoryLineRect.localScale = Vector3.one;
-
-            trajectoryLineImage.color = Color.green;
-            trajectoryLineImage.raycastTarget = false;
-
-            trajectoryLineImage.gameObject.SetActive(false);
-
-            
-        }
+        CreateTrajectoryLine();
         CreateEditLine();
         CreateZones();
-        // Убеждаемся, что контейнер существует
+        CreateTrajectoryHandle();
+
         if (aircraftContainer == null)
         {
             InitializeContainer();
         }
+
+        if (angleDisplayPanel != null)
+            angleDisplayPanel.SetActive(false);
 
         isInitialized = true;
     }
@@ -149,7 +121,6 @@ public class RadarManager : MonoBehaviour
         go.transform.SetParent(radarArea, false);
         aircraftContainer = go.transform;
 
-        // Настраиваем RectTransform
         RectTransform containerRect = go.GetComponent<RectTransform>();
         containerRect.anchorMin = Vector2.zero;
         containerRect.anchorMax = Vector2.one;
@@ -159,6 +130,168 @@ public class RadarManager : MonoBehaviour
         containerRect.sizeDelta = Vector2.zero;
     }
 
+    private void CreateTrajectoryLine()
+    {
+        if (trajectoryLinePrefab != null)
+        {
+            GameObject lineObj = Instantiate(trajectoryLinePrefab, radarArea);
+            trajectoryLineImage = lineObj.GetComponent<Image>();
+            trajectoryLineRect = lineObj.GetComponent<RectTransform>();
+
+            if (trajectoryLineImage != null)
+            {
+                trajectoryLineImage.type = Image.Type.Tiled;
+                trajectoryLineImage.sprite = CreateDashedSprite();
+                trajectoryLineImage.pixelsPerUnitMultiplier = 100f;
+                trajectoryLineImage.raycastTarget = false;
+            }
+
+            if (trajectoryLineRect != null)
+            {
+                trajectoryLineRect.anchorMin = Vector2.zero;
+                trajectoryLineRect.anchorMax = Vector2.zero;
+                trajectoryLineRect.pivot = new Vector2(0, 0.5f);
+                trajectoryLineRect.anchoredPosition = Vector2.zero;
+                trajectoryLineRect.localPosition = Vector3.zero;
+                trajectoryLineRect.localScale = Vector3.one;
+            }
+
+            if (trajectoryLineImage != null)
+                trajectoryLineImage.gameObject.SetActive(false);
+        }
+    }
+
+    private void CreateEditLine()
+    {
+        GameObject lineObj = new GameObject("EditTrajectoryLine", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        lineObj.transform.SetParent(radarArea, false);
+
+        editTrajectoryLineImage = lineObj.GetComponent<Image>();
+        editTrajectoryLineRect = lineObj.GetComponent<RectTransform>();
+
+        editTrajectoryLineRect.anchorMin = Vector2.zero;
+        editTrajectoryLineRect.anchorMax = Vector2.zero;
+        editTrajectoryLineRect.pivot = new Vector2(0, 0.5f);
+
+        Texture2D tex = new Texture2D(1, 1);
+        tex.SetPixel(0, 0, Color.white);
+        tex.Apply();
+        editTrajectoryLineImage.sprite = Sprite.Create(tex, new Rect(0, 0, 1, 1), Vector2.one * 0.5f);
+        editTrajectoryLineImage.color = editLineColor;
+        editTrajectoryLineImage.raycastTarget = false;
+        editTrajectoryLineImage.gameObject.SetActive(false);
+    }
+
+    private void CreateTrajectoryHandle()
+    {
+        // Удаляем старую ручку, если есть
+        var oldHandle = radarArea.Find("TrajectoryHandle");
+        if (oldHandle != null)
+            Destroy(oldHandle.gameObject);
+
+        GameObject handleObj = new GameObject("TrajectoryHandle", typeof(RectTransform), typeof(Image));
+        handleObj.transform.SetParent(radarArea, false);
+
+        // Удаляем возможные лишние компоненты
+        var outline = handleObj.GetComponent<Outline>();
+        if (outline != null) Destroy(outline);
+        var shadow = handleObj.GetComponent<Shadow>();
+        if (shadow != null) Destroy(shadow);
+
+        RectTransform handleRect = handleObj.GetComponent<RectTransform>();
+        handleRect.sizeDelta = new Vector2(0.4f, 0.4f);
+        handleRect.anchorMin = Vector2.zero;
+        handleRect.anchorMax = Vector2.zero;
+        handleRect.pivot = new Vector2(0.5f, 0.5f);
+
+        Image handleImg = handleObj.GetComponent<Image>();
+        handleImg.sprite = CreateCircleSprite();
+        handleImg.color = Color.yellow;
+        handleImg.raycastTarget = true;
+
+        trajectoryHandle = handleObj.AddComponent<TrajectoryHandle>();
+        trajectoryHandle.Initialize(this, radarArea);
+        trajectoryHandle.Hide();
+    }
+
+    private Sprite CreateCircleSprite()
+    {
+        int size = 24;
+        Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        tex.filterMode = FilterMode.Point;
+
+        Color transparent = new Color(0, 0, 0, 0);
+        Color white = Color.white;
+
+        int center = size / 2;
+        int radius = size / 2 - 2;
+
+        for (int x = 0; x < size; x++)
+        {
+            for (int y = 0; y < size; y++)
+            {
+                float dx = x - center;
+                float dy = y - center;
+                float dist = Mathf.Sqrt(dx * dx + dy * dy);
+
+                if (dist <= radius)
+                    tex.SetPixel(x, y, white);
+                else
+                    tex.SetPixel(x, y, transparent);
+            }
+        }
+
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
+    }
+
+    private Sprite CreateDashedSprite()
+    {
+        int width = 32;
+        int height = 4;
+
+        Texture2D texture = new Texture2D(width, height);
+        Color[] colors = new Color[width * height];
+
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                bool isColored = (x / 4) % 2 == 0;
+                colors[y * width + x] = isColored ? Color.white : Color.clear;
+            }
+        }
+
+        texture.SetPixels(colors);
+        texture.Apply();
+        texture.wrapMode = TextureWrapMode.Repeat;
+
+        return Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f));
+    }
+
+    private void CreateZones()
+    {
+        GameObject targetObj = new GameObject("TargetZone", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        targetObj.transform.SetParent(radarArea, false);
+        targetZoneImage = targetObj.GetComponent<Image>();
+        targetZoneRect = targetObj.GetComponent<RectTransform>();
+        SetupZone(targetZoneImage, targetZoneRect, targetZoneColor);
+    }
+
+    private void SetupZone(Image img, RectTransform rect, Color color)
+    {
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.zero;
+
+        Texture2D tex = new Texture2D(1, 1);
+        tex.SetPixel(0, 0, Color.white);
+        tex.Apply();
+        img.sprite = Sprite.Create(tex, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f));
+        img.color = color;
+        img.raycastTarget = false;
+        img.gameObject.SetActive(false);
+    }
+
     private void Update()
     {
         if (!isInitialized) return;
@@ -166,8 +299,6 @@ public class RadarManager : MonoBehaviour
         HandleSpawning();
         CheckCollisions();
         UpdateTrajectoryLine();
-        HandleTrajectoryEditing();
-        
     }
 
     private void HandleSpawning()
@@ -184,49 +315,25 @@ public class RadarManager : MonoBehaviour
 
     private void SpawnAircraft()
     {
-
-        // ПРОВЕРЯЕМ ВСЕ УСЛОВИЯ
-        if (!isInitialized)
-        {
-            Debug.LogError("RadarManager не инициализирован!");
+        if (!isInitialized || aircraftPrefab == null || aircraftContainer == null)
             return;
-        }
 
-        if (aircraftPrefab == null)
-        {
-            Debug.LogError("Невозможно создать самолет: префаб не назначен");
-            return;
-        }
-
-        if (aircraftContainer == null)
-        {
-            Debug.LogError("Невозможно создать самолет: контейнер не создан. Пытаюсь создать...");
-            InitializeContainer();
-            if (aircraftContainer == null) return;
-        }
-
-        // СОЗДАЕМ САМОЛЕТ
         GameObject go = Instantiate(aircraftPrefab, aircraftContainer);
 
-        // Проверяем RectTransform
         RectTransform rect = go.GetComponent<RectTransform>();
         if (rect == null)
         {
-            Debug.LogError("Созданный объект не имеет RectTransform! Это не UI элемент!");
             Destroy(go);
             return;
         }
 
         AircraftController ac = go.GetComponent<AircraftController>();
-
         if (ac == null)
         {
-            Debug.LogError("Префаб самолета не содержит компонент AircraftController!");
             Destroy(go);
             return;
         }
 
-        // Генерируем случайные точки
         Vector2 start = GetRandomEdgePoint();
         Vector2 targetZone = GetRandomEdgePoint();
         Vector2 end = GetRandomEdgePoint();
@@ -238,11 +345,9 @@ public class RadarManager : MonoBehaviour
 
         float speed = Random.Range(minSpeed, maxSpeed);
 
-        // Настройка компонента
         ac.Initialize(radarArea, start, end, targetZone);
         ac.Speed = speed;
 
-        // Подписка на события
         ac.OnSelected += HandleAircraftSelected;
         ac.OnDestroyed += HandleAircraftDestroyed;
         ac.OnDestinationReached += HandleDestinationReached;
@@ -266,16 +371,12 @@ public class RadarManager : MonoBehaviour
 
     private void CheckCollisions()
     {
-        // Очистка null элементов
         for (int i = activeAircrafts.Count - 1; i >= 0; i--)
         {
             if (activeAircrafts[i] == null)
-            {
                 activeAircrafts.RemoveAt(i);
-            }
         }
 
-        // Проверяем попарно
         for (int i = 0; i < activeAircrafts.Count; i++)
         {
             for (int j = i + 1; j < activeAircrafts.Count; j++)
@@ -292,6 +393,137 @@ public class RadarManager : MonoBehaviour
                 }
             }
         }
+    }
+
+    private void HandleAircraftSelected(AircraftController ac)
+    {
+        if (selectedAircraft != null && selectedAircraft != ac)
+            selectedAircraft.SetSelected(false);
+
+        selectedAircraft = ac;
+
+        ShowZone(targetZoneImage, targetZoneRect, ac.TargetZoneNorm, targetZoneWidth, targetZoneColor);
+
+        if (infoText != null)
+            infoText.text = ac.GetDescription();
+
+        if (trajectoryLineImage != null)
+        {
+            trajectoryLineImage.gameObject.SetActive(true);
+            UpdateTrajectoryLine();
+        }
+
+        if (trajectoryHandle != null)
+            trajectoryHandle.ShowForAircraft(ac);
+    }
+
+    private void UpdateTrajectoryLine()
+    {
+        if (trajectoryLineImage == null || selectedAircraft == null)
+        {
+            if (trajectoryLineImage != null)
+                trajectoryLineImage.gameObject.SetActive(false);
+            return;
+        }
+
+        Vector2 start = selectedAircraft.CurrentPosition;
+        Vector2 end = selectedAircraft.EndPositionWorld;
+
+        Vector2 direction = end - start;
+        float distance = direction.magnitude;
+
+        if (distance < 1f)
+        {
+            trajectoryLineImage.gameObject.SetActive(false);
+            return;
+        }
+
+        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+
+        trajectoryLineRect.anchoredPosition = start;
+        trajectoryLineRect.sizeDelta = new Vector2(distance, trajectoryLineWidth);
+        trajectoryLineRect.localRotation = Quaternion.Euler(0, 0, angle);
+
+        trajectoryLineImage.color = trajectoryLineColor;
+        trajectoryLineImage.gameObject.SetActive(true);
+    }
+
+    private void ShowZone(Image zoneImage, RectTransform zoneRect, Vector2 normPos, float width, Color color)
+    {
+        if (zoneImage == null) return;
+
+        Vector2 size = radarArea.rect.size;
+        Vector2 center;
+        Vector2 zoneSize;
+
+        if (Mathf.Approximately(normPos.x, 0f))
+        {
+            center = new Vector2(0, normPos.y * size.y);
+            zoneSize = new Vector2(width * size.x, size.y * 0.15f);
+            zoneRect.pivot = new Vector2(0, 0.5f);
+        }
+        else if (Mathf.Approximately(normPos.x, 1f))
+        {
+            center = new Vector2(size.x, normPos.y * size.y);
+            zoneSize = new Vector2(width * size.x, size.y * 0.15f);
+            zoneRect.pivot = new Vector2(1, 0.5f);
+        }
+        else if (Mathf.Approximately(normPos.y, 0f))
+        {
+            center = new Vector2(normPos.x * size.x, 0);
+            zoneSize = new Vector2(size.x * 0.15f, width * size.y);
+            zoneRect.pivot = new Vector2(0.5f, 0);
+        }
+        else
+        {
+            center = new Vector2(normPos.x * size.x, size.y);
+            zoneSize = new Vector2(size.x * 0.15f, width * size.y);
+            zoneRect.pivot = new Vector2(0.5f, 1);
+        }
+
+        zoneRect.anchoredPosition = center;
+        zoneRect.sizeDelta = zoneSize;
+        zoneImage.color = color;
+        zoneImage.gameObject.SetActive(true);
+    }
+
+    private void HideAllZones()
+    {
+        if (targetZoneImage != null) targetZoneImage.gameObject.SetActive(false);
+    }
+
+    private void HandleDestinationReached(AircraftController ac, bool hitTarget)
+    {
+        if (hitTarget)
+            Debug.Log($"САМОЛЁТ {ac.AircraftID} УСПЕШНО ПРИБЫЛ В ЦЕЛЕВУЮ ЗОНУ!");
+        else
+            Debug.Log($"САМОЛЁТ {ac.AircraftID} ПРОМАХНУЛСЯ! Цель: {ac.TargetZoneNorm}, Прибыл: {ac.EndPosNorm}");
+    }
+
+    private void HandleAircraftDestroyed(AircraftController ac)
+    {
+        if (selectedAircraft == ac)
+        {
+            selectedAircraft = null;
+            HideAllZones();
+            if (trajectoryLineImage != null)
+                trajectoryLineImage.gameObject.SetActive(false);
+            if (trajectoryHandle != null)
+                trajectoryHandle.Hide();
+            if (infoText != null)
+                infoText.text = "Выберите самолет";
+        }
+
+        activeAircrafts.Remove(ac);
+    }
+
+    public AircraftController GetAircraftByID(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return null;
+        foreach (var aircraft in activeAircrafts)
+            if (aircraft != null && aircraft.AircraftID == id)
+                return aircraft;
+        return null;
     }
 
     public void SelectAircraftByID(string id)
@@ -314,148 +546,104 @@ public class RadarManager : MonoBehaviour
         Debug.LogWarning($"SelectAircraftByID: самолет с ID {id} не найден");
     }
 
-    private void HandleAircraftSelected(AircraftController ac)
-    {
-        if (selectedAircraft != ac)
-        {
-            isPendingTrajectoryVisible = false;
-            CancelEditing();
-        }
-
-        if (selectedAircraft != null && selectedAircraft != ac)
-        {
-            selectedAircraft.SetSelected(false);
-        }
-
-        selectedAircraft = ac;
-        ShowZone(targetZoneImage, targetZoneRect, ac.TargetZoneNorm, targetZoneWidth, targetZoneColor);
-
-        if (infoText != null)
-        {
-            infoText.text = ac.GetDescription();
-        }
-
-        if (trajectoryLineImage != null)
-        {
-            trajectoryLineImage.gameObject.SetActive(true);
-            UpdateTrajectoryLine();
-        }
-    }
-
-    private void UpdateTrajectoryLine()
-    {
-        if (trajectoryLineImage == null || selectedAircraft == null)
-        {
-            if (trajectoryLineImage != null)
-                trajectoryLineImage.gameObject.SetActive(false);
-            return;
-        }
-
-        // Получаем позиции в UI координатах
-        Vector2 start = selectedAircraft.CurrentPosition;
-        Vector2 end = selectedAircraft.EndPositionWorld;
-
-
-        Vector2 direction = end - start;
-        float distance = direction.magnitude;
-
-        if (distance < 1f)
-        {
-            trajectoryLineImage.gameObject.SetActive(false);
-            return;
-        }
-
-        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-
-        // ВАЖНО: Используем anchoredPosition (UI координаты)
-        trajectoryLineRect.anchoredPosition = start;
-        trajectoryLineRect.sizeDelta = new Vector2(distance, trajectoryLineWidth);
-        trajectoryLineRect.localRotation = Quaternion.Euler(0, 0, angle);
-
-        trajectoryLineImage.color = trajectoryLineColor;
-        trajectoryLineImage.gameObject.SetActive(true);
-
-    }
-
-    private Sprite CreateDashedSprite()
-    {
-        int width = 32;
-        int height = 4;
-
-        Texture2D texture = new Texture2D(width, height);
-        Color[] colors = new Color[width * height];
-
-        // Создаём паттерн: 4 пикселя цвет, 4 пикселя прозрачный
-        for (int y = 0; y < height; y++)
-        {
-            for (int x = 0; x < width; x++)
-            {
-                // Каждые 8 пикселей меняем цвет
-                bool isColored = (x / 4) % 2 == 0;
-                colors[y * width + x] = isColored ? Color.white : Color.clear;
-            }
-        }
-
-        texture.SetPixels(colors);
-        texture.Apply();
-        texture.wrapMode = TextureWrapMode.Repeat;
-
-        return Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f));
-    }
-
-    private void HandleDestinationReached(AircraftController ac, bool hitTarget)
-    {
-        editTrajectoryLineImage.gameObject.SetActive(false);
-        if (hitTarget)
-        {
-            Debug.Log($"САМОЛЁТ {ac.AircraftID} УСПЕШНО ПРИБЫЛ В ЦЕЛЕВУЮ ЗОНУ!");
-
-
-            // TODO: Добавить очки, звук успеха, эффекты
-        }
-        else
-        {
-            Debug.Log($"САМОЛЁТ {ac.AircraftID} ПРОМАХНУЛСЯ! Цель: {ac.TargetZoneNorm}, Прибыл: {ac.EndPosNorm}");
-
-
-            // TODO: Штраф, звук ошибки, эффекты
-        }
-    }
-
     public bool IsAircraftExists(string id)
     {
-        if (string.IsNullOrEmpty(id))
-        {
-            Debug.LogWarning("IsAircraftExists: передан пустой ID");
-            return false;
-        }
-
+        if (string.IsNullOrEmpty(id)) return false;
         foreach (var aircraft in activeAircrafts)
-        {
             if (aircraft != null && aircraft.AircraftID == id)
-            {
                 return true;
-            }
-        }
-
         return false;
     }
 
-    private void HandleAircraftDestroyed(AircraftController ac)
-    {
-        if (selectedAircraft == ac)
-        {
-            editTrajectoryLineImage.gameObject.SetActive(false);
-            selectedAircraft = null;
-            HideAllZones();
-            if (trajectoryLineImage != null)
-                trajectoryLineImage.gameObject.SetActive(false);
-            if (infoText != null)
-                infoText.text = "Выберите самолет";
-        }
+    // ========== МЕТОДЫ ДЛЯ РЕДАКТИРОВАНИЯ ТРАЕКТОРИИ ==========
 
-        activeAircrafts.Remove(ac);
+    public void StartTrajectoryEditing(AircraftController aircraft, float originalAngle)
+    {
+        if (aircraft == null) return;
+        pendingAircraftID = aircraft.AircraftID;
+        currentPreviewDeltaAngle = 0f;
+        ShowAngleDisplay(originalAngle);
     }
+
+    public void UpdateTrajectoryPreview(Vector2 startPoint, Vector2 newEndPoint, float deltaAngle)
+    {
+        if (editTrajectoryLineImage == null) return;
+
+        currentPreviewDeltaAngle = deltaAngle;
+
+        Vector2 dir = newEndPoint - startPoint;
+        float distance = dir.magnitude;
+        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+
+        editTrajectoryLineRect.anchoredPosition = startPoint;
+        editTrajectoryLineRect.sizeDelta = new Vector2(distance, editLineWidth);
+        editTrajectoryLineRect.localRotation = Quaternion.Euler(0, 0, angle);
+        editTrajectoryLineImage.gameObject.SetActive(true);
+
+        UpdateAngleDisplay(deltaAngle);
+    }
+
+    public void CancelTrajectoryEdit()
+    {
+        pendingAircraftID = null;
+        currentPreviewDeltaAngle = 0f;
+
+        if (editTrajectoryLineImage != null)
+            editTrajectoryLineImage.gameObject.SetActive(false);
+
+        HideAngleDisplay();
+    }
+
+    public void ShowAngleMessage(string aircraftID, float deltaAngle)
+    {
+        Debug.Log($"[ТРАЕКТОРИЯ] Самолёт {aircraftID}: угол отклонения {deltaAngle:F1}°");
+
+        if (infoText != null)
+        {
+            string originalText = infoText.text;
+            infoText.text = $"УГОЛ ВЫБРАН: {deltaAngle:F1}°\n(Подтвердите на радио)";
+            CancelInvoke(nameof(RestoreInfoText));
+            Invoke(nameof(RestoreInfoText), 2f);
+        }
+    }
+
+    private void RestoreInfoText()
+    {
+        if (infoText != null && selectedAircraft != null)
+            infoText.text = selectedAircraft.GetDescription();
+        else if (infoText != null)
+            infoText.text = "Выберите самолет";
+    }
+
+    private void ShowAngleDisplay(float originalAngle)
+    {
+        if (angleDisplayPanel != null)
+            angleDisplayPanel.SetActive(true);
+
+        if (angleDisplayText != null)
+        {
+            angleDisplayText.text = $"Отклонение: 0°";
+            angleDisplayText.color = normalAngleColor;
+        }
+    }
+
+    private void UpdateAngleDisplay(float deltaAngle)
+    {
+        if (angleDisplayText == null) return;
+
+        string sign = deltaAngle >= 0 ? "+" : "";
+        angleDisplayText.text = $"Отклонение: {sign}{deltaAngle:F1}°";
+        angleDisplayText.color = Mathf.Abs(deltaAngle) > maxAngleWarning ? warningAngleColor : normalAngleColor;
+    }
+
+    private void HideAngleDisplay()
+    {
+        if (angleDisplayPanel != null)
+            angleDisplayPanel.SetActive(false);
+    }
+
+    public RectTransform GetRadarArea() => radarArea;
+    public Vector2 GetRadarSize() => radarArea != null ? radarArea.rect.size : Vector2.zero;
 
     private void OnDestroy()
     {
@@ -467,314 +655,5 @@ public class RadarManager : MonoBehaviour
                 ac.OnDestroyed -= HandleAircraftDestroyed;
             }
         }
-    }
-
-    private void CreateEditLine()
-    {
-        GameObject lineObj = new GameObject("EditTrajectoryLine", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-        lineObj.transform.SetParent(radarArea, false);
-
-        editTrajectoryLineImage = lineObj.GetComponent<Image>();
-        editTrajectoryLineRect = lineObj.GetComponent<RectTransform>();
-
-        editTrajectoryLineRect.anchorMin = Vector2.zero;
-        editTrajectoryLineRect.anchorMax = Vector2.zero;
-        editTrajectoryLineRect.pivot = new Vector2(0, 0.5f);
-
-        // Создаем простой спрайт
-        Texture2D tex = new Texture2D(1, 1);
-        tex.SetPixel(0, 0, Color.white);
-        tex.Apply();
-        editTrajectoryLineImage.sprite = Sprite.Create(tex, new Rect(0, 0, 1, 1), Vector2.one * 0.5f);
-
-        editTrajectoryLineImage.color = editLineColor;
-        editTrajectoryLineImage.raycastTarget = false;
-        editTrajectoryLineImage.gameObject.SetActive(false);
-
-    }
-
-
-    private bool IsPointerNearLine(Vector2 mousePos, Vector2 start, Vector2 end, float threshold = 20f)
-    {
-        Vector2 lineDir = (end - start).normalized;
-        Vector2 toMouse = mousePos - start;
-
-        float projection = Vector2.Dot(toMouse, lineDir);
-        projection = Mathf.Clamp(projection, 0, Vector2.Distance(start, end));
-
-        Vector2 closestPoint = start + lineDir * projection;
-
-        float distance = Vector2.Distance(mousePos, closestPoint);
-        return distance < threshold;
-    }
-
-
-    private void HandleTrajectoryEditing()
-    {
-        if (selectedAircraft == null) return;
-
-        Vector2 startPos = selectedAircraft.CurrentPosition;
-
-        // получаем позицию мыши в UI координатах
-        Vector2 mousePos;
-        Canvas canvas = radarArea.GetComponentInParent<Canvas>();
-
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            radarArea,
-            Input.mousePosition,
-            canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera,
-            out mousePos
-        );
-
-        Vector2 currentEnd = GetEdgePoint(startPos, selectedAircraft.GetDirection());
-
-        // --- НАЧАЛО DRAG ---
-        if (Input.GetMouseButtonDown(0))
-        {
-            if (IsPointerNearLine(mousePos, startPos, currentEnd))
-            {
-                isDraggingTrajectory = true;
-                isEditingMode = true;
-            }
-        }
-
-        // --- DRAG ---
-        if (isDraggingTrajectory && Input.GetMouseButton(0))
-        {
-            Vector2 dir = (mousePos - startPos).normalized;
-
-            if (dir.magnitude > 0.01f)
-            {
-                Vector2 edgePoint = GetEdgePoint(startPos, dir);
-
-                UpdateEditLine(startPos, edgePoint);
-
-                currentEditAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-            }
-        }
-
-        // --- КОНЕЦ DRAG ---
-        if (isDraggingTrajectory && Input.GetMouseButtonUp(0))
-        {
-            isDraggingTrajectory = false;
-            isEditingMode = false;
-            isPendingTrajectoryVisible = true;
-
-            Vector2 dir = new Vector2(
-                Mathf.Cos(currentEditAngle * Mathf.Deg2Rad),
-                Mathf.Sin(currentEditAngle * Mathf.Deg2Rad)
-            );
-
-            Vector2 edgePoint = GetEdgePoint(startPos, dir);
-
-            Vector2 size = radarArea.rect.size;
-            pendingTrajectory = new Vector2(edgePoint.x / size.x, edgePoint.y / size.y);
-            pendingAircraftID = selectedAircraft.AircraftID;
-        }
-
-        // --- ПОКАЗ PENDING ---
-        if (isPendingTrajectoryVisible && pendingTrajectory.HasValue)
-        {
-            Vector2 size = radarArea.rect.size;
-            Vector2 targetPos = new Vector2(
-                pendingTrajectory.Value.x * size.x,
-                pendingTrajectory.Value.y * size.y
-            );
-
-            UpdateEditLine(startPos, targetPos);
-            editTrajectoryLineImage.gameObject.SetActive(true);
-        }
-    }
-
-    private Vector2 GetEdgePoint(Vector2 origin, Vector2 direction)
-    {
-        Vector2 size = radarArea.rect.size;
-
-        // Если направление нулевое - возвращаем точку справа
-        if (direction.magnitude < 0.1f)
-        {
-            return new Vector2(size.x, origin.y);
-        }
-
-        direction.Normalize();
-
-        // Находим пересечение с четырьмя границами
-        float tMin = float.MaxValue;
-
-        // Правая граница (x = width)
-        if (direction.x > 0)
-        {
-            float t = (size.x - origin.x) / direction.x;
-            if (t > 0 && t < tMin) tMin = t;
-        }
-
-        // Левая граница (x = 0)
-        if (direction.x < 0)
-        {
-            float t = -origin.x / direction.x;
-            if (t > 0 && t < tMin) tMin = t;
-        }
-
-        // Верхняя граница (y = height)
-        if (direction.y > 0)
-        {
-            float t = (size.y - origin.y) / direction.y;
-            if (t > 0 && t < tMin) tMin = t;
-        }
-
-        // Нижняя граница (y = 0)
-        if (direction.y < 0)
-        {
-            float t = -origin.y / direction.y;
-            if (t > 0 && t < tMin) tMin = t;
-        }
-
-        Vector2 result = origin + direction * tMin;
-
-        // Ограничиваем размерами (на всякий случай)
-        result.x = Mathf.Clamp(result.x, 0, size.x);
-        result.y = Mathf.Clamp(result.y, 0, size.y);
-
-        return result;
-    }
-
-    private void UpdateEditLine(Vector2 start, Vector2 end)
-    {
-        if (editTrajectoryLineImage == null || editTrajectoryLineRect == null) return;
-
-        Vector2 dir = end - start;
-        float dist = dir.magnitude;
-        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-
-        editTrajectoryLineRect.anchoredPosition = start;
-        editTrajectoryLineRect.sizeDelta = new Vector2(dist, editLineWidth);
-        editTrajectoryLineRect.localRotation = Quaternion.Euler(0, 0, angle);
-
-        editTrajectoryLineImage.color = editLineColor;
-        editTrajectoryLineImage.gameObject.SetActive(true);
-    }
-
-    private void StopEditingMode()
-    {
-        isEditingMode = false;
-    }
-
-    private void CancelEditing()
-    {
-        pendingTrajectory = null;
-        pendingAircraftID = null;
-        StopEditingMode();
-    }
-
-
-    public void ApplyPendingTrajectory(string aircraftID)
-    {
-        if (pendingTrajectory.HasValue && pendingAircraftID == aircraftID)
-        {
-            AircraftController ac = GetAircraftByID(aircraftID);
-            if (ac != null)
-            {
-                ac.SetNewDestination(pendingTrajectory.Value);
-                isPendingTrajectoryVisible = false;
-                editTrajectoryLineImage.gameObject.SetActive(false);
-                pendingTrajectory = null;
-                pendingAircraftID = null;
-                Debug.Log($"Траектория применена для {aircraftID}");
-            }
-        }
-    }
-
-    public AircraftController GetAircraftByID(string id)
-    {
-        if (string.IsNullOrEmpty(id))
-            return null;
-
-        foreach (var aircraft in activeAircrafts)
-        {
-            if (aircraft != null && aircraft.AircraftID == id)
-                return aircraft;
-        }
-
-        return null;
-    }
-
-    private void ShowZone(Image zoneImage, RectTransform zoneRect, Vector2 normPos, float width, Color color)
-    {
-        if (zoneImage == null) return;
-
-        Vector2 size = radarArea.rect.size;
-        Vector2 center;
-        Vector2 zoneSize;
-
-        // Определяем сторону
-        if (Mathf.Approximately(normPos.x, 0f)) // Левая
-        {
-            center = new Vector2(0, normPos.y * size.y);
-            zoneSize = new Vector2(width * size.x, size.y * 0.15f);
-            zoneRect.pivot = new Vector2(0, 0.5f);
-        }
-        else if (Mathf.Approximately(normPos.x, 1f)) // Правая
-        {
-            center = new Vector2(size.x, normPos.y * size.y);
-            zoneSize = new Vector2(width * size.x, size.y * 0.15f);
-            zoneRect.pivot = new Vector2(1, 0.5f);
-        }
-        else if (Mathf.Approximately(normPos.y, 0f)) // Нижняя
-        {
-            center = new Vector2(normPos.x * size.x, 0);
-            zoneSize = new Vector2(size.x * 0.15f, width * size.y);
-            zoneRect.pivot = new Vector2(0.5f, 0);
-        }
-        else // Верхняя
-        {
-            center = new Vector2(normPos.x * size.x, size.y);
-            zoneSize = new Vector2(size.x * 0.15f, width * size.y);
-            zoneRect.pivot = new Vector2(0.5f, 1);
-        }
-
-        zoneRect.anchoredPosition = center;
-        zoneRect.sizeDelta = zoneSize;
-        zoneImage.color = color;
-        zoneImage.gameObject.SetActive(true);
-    }
-
-    private string GetEdgeName(Vector2 norm)
-    {
-        if (Mathf.Approximately(norm.x, 0f)) return "ЛЕВО";
-        if (Mathf.Approximately(norm.x, 1f)) return "ПРАВО";
-        if (Mathf.Approximately(norm.y, 0f)) return "НИЗ";
-        if (Mathf.Approximately(norm.y, 1f)) return "ВЕРХ";
-        return "НЕИЗВЕСТНО";
-    }
-
-
-    private void CreateZones()
-    {
-        // Целевая зона (зелёная)
-        GameObject targetObj = new GameObject("TargetZone", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-        targetObj.transform.SetParent(radarArea, false);
-        targetZoneImage = targetObj.GetComponent<Image>();
-        targetZoneRect = targetObj.GetComponent<RectTransform>();
-        SetupZone(targetZoneImage, targetZoneRect, targetZoneColor);
-
-    }
-
-    private void SetupZone(Image img, RectTransform rect, Color color)
-    {
-        rect.anchorMin = Vector2.zero;
-        rect.anchorMax = Vector2.zero;
-
-        Texture2D tex = new Texture2D(1, 1);
-        tex.SetPixel(0, 0, Color.white);
-        tex.Apply();
-        img.sprite = Sprite.Create(tex, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f));
-        img.color = color;
-        img.raycastTarget = false;
-        img.gameObject.SetActive(false);
-    }
-
-    private void HideAllZones()
-    {
-        if (targetZoneImage != null) targetZoneImage.gameObject.SetActive(false);
     }
 }
