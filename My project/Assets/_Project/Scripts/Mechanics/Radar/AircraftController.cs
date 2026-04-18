@@ -114,6 +114,7 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
         {
             UpdatePosition();
         }
+        
     }
 
     private void UpdatePosition()
@@ -234,33 +235,16 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        // Только если самолет уже выделен
         if (!isSelected) return;
-
         isPointerDown = true;
-        pointerDownTime = Time.time;
-        CancelInvoke(nameof(StartEditMode));
-        Invoke(nameof(StartEditMode), holdTimeToEdit);
-
     }
 
     public void OnPointerUp(PointerEventData eventData)
     {
         isPointerDown = false;
-        CancelInvoke(nameof(StartEditMode));
     }
 
-    private void StartEditMode()
-    {
-        if (isPointerDown && isSelected)
-        {
-            RadarManager radar = FindFirstObjectByType<RadarManager>();
-            if (radar != null)
-            {
-                radar.StartEditMode();
-            }
-        }
-    }
+    
 
     public void SetNewDestination(Vector2 newEndNorm)
     {
