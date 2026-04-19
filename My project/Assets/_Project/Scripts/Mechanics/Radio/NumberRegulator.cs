@@ -17,6 +17,7 @@ public class NumberRegulator : MonoBehaviour, Interactable
     [Header("Audio")]
     [SerializeField] private AudioClip dialSound;
     private AudioSource audioSource;
+    private SoundRotateButton SoundRotateButton;
 
     [Header("Visual")]
     [SerializeField] private Material defaultMaterial;
@@ -38,6 +39,13 @@ public class NumberRegulator : MonoBehaviour, Interactable
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        SoundRotateButton = GetComponent<SoundRotateButton>();
+        
+        // Проверяем наличие компонента
+        if (SoundRotateButton == null)
+        {
+            Debug.LogWarning("SoundRotateButton component not found on the same GameObject. Please add it for random sound playback.", this);
+        }
         audioSource = GetComponent<AudioSource>();
         dialRenderer = GetComponent<Renderer>();
 
@@ -99,10 +107,7 @@ public class NumberRegulator : MonoBehaviour, Interactable
                         OnValueChanged?.Invoke(currentValue);
 
                         // Звук
-                        if (audioSource != null && dialSound != null)
-                        {
-                            audioSource.PlayOneShot(dialSound);
-                        }
+                        PlayRandomDialSound();
 
                         Debug.Log($"Значение изменено на: {currentValue}");
                     }
@@ -125,7 +130,21 @@ public class NumberRegulator : MonoBehaviour, Interactable
         Cursor.lockState = CursorLockMode.Locked;
 
     }
+    
+    private void PlayRandomDialSound()
+    {
+        if (SoundRotateButton != null)
+        {
+            // Проигрываем случайный звук из списка
+            SoundRotateButton.PlayRandomSound();
+        }
+        else if (audioSource != null && dialSound != null)
+        {
+            audioSource.PlayOneShot(dialSound);
+        }
+    }
 
+    
     private void UpdateDisplay()
     {
         if (displayText != null)
