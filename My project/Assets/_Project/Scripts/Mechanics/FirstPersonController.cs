@@ -15,7 +15,6 @@ public class FirstPersonController : MonoBehaviour
     private float xRotation = 0f;
     private Vector3 velocity;
     
-    // Флаги блокировки
     private bool movementLocked = false;
     private bool cameraLocked = false;
 
@@ -63,8 +62,6 @@ public class FirstPersonController : MonoBehaviour
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
     }
-    
-    // --- Публичные методы для блокировки из других скриптов ---
     
     public void LockMovement()
     {

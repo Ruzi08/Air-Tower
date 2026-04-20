@@ -1,0 +1,22 @@
+{
+  "dialogues": [
+    {
+      "id": "intro_1",
+      "speaker": "???",
+      "text": "Алло... Ты меня слышишь?",
+      "autoProgressDelay": 0
+    },
+    {
+      "id": "intro_2",
+      "speaker": "???",
+      "text": "У нас проблемы. Свет может отключиться в любой момент.",
+      "autoProgressDelay": 0
+    },
+    {
+      "id": "intro_3",
+      "speaker": "???",
+      "text": "Проверь щиток в подвале. Быстрее!",
+      "autoProgressDelay": 1.5
+    }
+  ]
+}

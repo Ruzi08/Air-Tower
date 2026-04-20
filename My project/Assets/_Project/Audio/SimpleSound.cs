@@ -8,7 +8,10 @@ public class SimpleSound : MonoBehaviour
     public float minPitch = 0.9f;
     public float maxPitch = 1.1f;
     public bool loop = false;
-    public float maxDistance = 15f;
+    public float maxDistance = 50f;
+    
+    [Header("=== ПРИГЛУШЕНИЕ ЗА СТЕНАМИ ===")]
+    [Range(0, 1)] public float wallMuffle = 0.3f;
     
     private AudioSource audioSource;
     private Transform listener;
@@ -23,11 +26,10 @@ public class SimpleSound : MonoBehaviour
         audioSource.clip = clip;
         audioSource.loop = loop;
         audioSource.maxDistance = maxDistance;
-        audioSource.spatialBlend = 1f; // 3D звук
+        audioSource.spatialBlend = 1f;
         
         originalVolume = volume;
         
-        // Находим слушателя (камера игрока)
         Camera cam = Camera.main;
         if (cam != null)
             listener = cam.transform;
@@ -36,20 +38,18 @@ public class SimpleSound : MonoBehaviour
     void Update()
     {
         if (listener == null) return;
+        if (!audioSource.isPlaying) return;
         
-        // Расчёт громкости от расстояния
         float distance = Vector3.Distance(transform.position, listener.position);
         float distanceVolume = Mathf.Clamp01(1 - (distance / maxDistance));
+        float wallFactor = IsDirectlyVisible() ? 1f : wallMuffle;
         
-        // Проверка видимости (рейкаст до игрока)
-        bool canHear = CheckVisibility();
-        
-        audioSource.volume = canHear ? originalVolume * distanceVolume : 0;
+        audioSource.volume = originalVolume * distanceVolume * wallFactor;
     }
     
-    private bool CheckVisibility()
+    private bool IsDirectlyVisible()
     {
-        if (listener == null) return false;
+        if (listener == null) return true;
         
         Vector3 direction = (listener.position - transform.position).normalized;
         float distance = Vector3.Distance(transform.position, listener.position);
@@ -57,11 +57,8 @@ public class SimpleSound : MonoBehaviour
         RaycastHit hit;
         if (Physics.Raycast(transform.position, direction, out hit, distance))
         {
-            // Если луч упёрся в игрока — звук слышен
             if (hit.transform == listener || hit.transform.root.CompareTag("Player"))
                 return true;
-            
-            // Иначе стена блокирует звук
             return false;
         }
         
@@ -70,15 +67,22 @@ public class SimpleSound : MonoBehaviour
     
     public void Play()
     {
-        if (clip == null) return;
+        if (clip == null)
+        {
+            Debug.LogWarning($"SimpleSound: нет AudioClip на {gameObject.name}");
+            return;
+        }
         
         audioSource.pitch = Random.Range(minPitch, maxPitch);
+        audioSource.loop = loop;
         audioSource.Play();
+        Debug.Log($"🔊 SimpleSound.Play() на {gameObject.name}, loop={loop}");
     }
     
     public void Stop()
     {
         audioSource.Stop();
+        Debug.Log($"🔇 SimpleSound.Stop() на {gameObject.name}");
     }
     
     public bool IsPlaying()
