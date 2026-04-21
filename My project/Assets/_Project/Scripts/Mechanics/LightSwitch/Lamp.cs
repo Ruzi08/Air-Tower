@@ -3,10 +3,11 @@ using UnityEngine;
 public class Lamp : MonoBehaviour
 {
     [Header("Настройки лампы")]
-    public Light lightSource;      // Компонент света
-    public bool startOn = true;    // Включена ли при старте
+    public Light lightSource;
+    public bool startOn = true;
     
     private bool isOn;
+    private bool hasPower = true;
     
     void Start()
     {
@@ -14,19 +15,51 @@ public class Lamp : MonoBehaviour
             lightSource = GetComponent<Light>();
         
         isOn = startOn;
-        lightSource.enabled = isOn;
+        UpdateLight();
+        
+        // ПОДПИСЫВАЕМСЯ НА СОБЫТИЯ PowerManager
+        if (PowerManager.Instance != null)
+        {
+            PowerManager.Instance.OnPowerOut += HandlePowerOut;
+            PowerManager.Instance.OnPowerRestored += HandlePowerRestored;
+        }
+    }
+    
+    void OnDestroy()
+    {
+        // Отписываемся при уничтожении
+        if (PowerManager.Instance != null)
+        {
+            PowerManager.Instance.OnPowerOut -= HandlePowerOut;
+            PowerManager.Instance.OnPowerRestored -= HandlePowerRestored;
+        }
+    }
+    
+    private void HandlePowerOut()
+    {
+        hasPower = false;
+        UpdateLight();
+        Debug.Log($"Лампа: свет пропал");
+    }
+    
+    private void HandlePowerRestored()
+    {
+        hasPower = true;
+        UpdateLight();
+        Debug.Log($"Лампа: свет вернулся");
     }
     
     public void TurnOn()
     {
+        if (!hasPower) return;
         isOn = true;
-        lightSource.enabled = true;
+        UpdateLight();
     }
     
     public void TurnOff()
     {
         isOn = false;
-        lightSource.enabled = false;
+        UpdateLight();
     }
     
     public void Toggle()
@@ -35,5 +68,17 @@ public class Lamp : MonoBehaviour
         else TurnOn();
     }
     
-    public bool IsOn() => isOn;
+    private void UpdateLight()
+    {
+        if (lightSource != null)
+            lightSource.enabled = isOn && hasPower;
+    }
+    
+    public void UpdatePowerState(bool power)
+    {
+        hasPower = power;
+        UpdateLight();
+    }
+    
+    public bool IsOn() => isOn && hasPower;
 }
