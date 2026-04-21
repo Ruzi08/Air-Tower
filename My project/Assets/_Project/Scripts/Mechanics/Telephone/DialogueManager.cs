@@ -20,8 +20,7 @@ public class DialogueManager : MonoBehaviour
     
     [Header("UI Elements")]
     public GameObject dialoguePanel;
-    public TextMeshProUGUI speakerText;
-    public TextMeshProUGUI dialogueText;
+    public TextMeshProUGUI dialogueText;  // ← только текст диалога
     public Button continueButton;
     
     [Header("Typewriter")]
@@ -30,9 +29,6 @@ public class DialogueManager : MonoBehaviour
     [Header("Настройки блокировки")]
     public bool lockPlayer = true;
     public bool hideCrosshairDuringDialogue = true;
-    
-    [Header("Управление")]
-    public KeyCode continueKey = KeyCode.E;  // ← КНОПКА ДЛЯ ПРОДОЛЖЕНИЯ
     
     [Header("Расписание звонков")]
     public List<ScheduledCall> scheduledCalls;
@@ -80,11 +76,22 @@ public class DialogueManager : MonoBehaviour
         if (gameStarted)
             gameTimer += Time.deltaTime;
         
-        // ✅ ПРОДОЛЖЕНИЕ ДИАЛОГА ПО КНОПКЕ (E или ЛКМ)
-        if (isDialogueActive && waitingForInput && Input.GetKeyDown(continueKey))
+        // Продолжение на любую клавишу или ЛКМ
+        if (isDialogueActive && waitingForInput)
         {
-            Debug.Log($"🎮 Продолжение диалога по клавише {continueKey}");
-            OnContinueClicked();
+            if (Input.GetMouseButtonDown(0))
+            {
+                Debug.Log("🖱️ Продолжение диалога (ЛКМ)");
+                OnContinueClicked();
+                return;
+            }
+            
+            if (Input.anyKeyDown && !Input.GetKeyDown(KeyCode.Escape))
+            {
+                Debug.Log("🎮 Продолжение диалога (клавиша)");
+                OnContinueClicked();
+                return;
+            }
         }
     }
     
@@ -169,8 +176,8 @@ public class DialogueManager : MonoBehaviour
         }
         
         DialogueEntry entry = currentDialogueList[currentIndex];
-        speakerText.text = entry.speaker;
         
+        // Показываем только текст (speaker не используем)
         typewriter.StartTyping(entry.text, OnTypingComplete);
         continueButton.interactable = false;
         waitingForInput = false;
@@ -261,4 +268,5 @@ public class DialogueManager : MonoBehaviour
     }
     
     public bool IsDialogueActive => isDialogueActive;
+    public float GetGameTime() => gameTimer;
 }
