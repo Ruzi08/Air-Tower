@@ -24,7 +24,8 @@ public class ConnectButton : MonoBehaviour, Interactable
     private Renderer buttonRenderer;
     private Vector3 originalPosition;
     private bool isPressed = false;
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    private bool hasPower = true;
+
     void Start()
     {
         buttonRenderer = GetComponent<Renderer>();
@@ -36,30 +37,62 @@ public class ConnectButton : MonoBehaviour, Interactable
 
         if (indicatorLight != null)
             indicatorLight.enabled = false;
+
+        if (PowerManager.Instance != null)
+        {
+            PowerManager.Instance.OnPowerOut += OnPowerOut;
+            PowerManager.Instance.OnPowerRestored += OnPowerRestored;
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (PowerManager.Instance != null)
+        {
+            PowerManager.Instance.OnPowerOut -= OnPowerOut;
+            PowerManager.Instance.OnPowerRestored -= OnPowerRestored;
+        }
+    }
+
+    private void OnPowerOut()
+    {
+        hasPower = false;
+        if (indicatorLight != null)
+            indicatorLight.enabled = false;
+        Debug.Log("ConnectButton: электричество отключено");
+    }
+
+    private void OnPowerRestored()
+    {
+        hasPower = true;
+        Debug.Log("ConnectButton: электричество включено");
     }
 
     public void Interact()
     {
-        if (isPressed) return;
+        // ✅ Анимация и звук ВСЕГДА
+        StartCoroutine(PressAnimation());
 
-        if (radioController != null)
+        // ✅ Логика ТОЛЬКО если есть свет
+        if (hasPower && radioController != null)
         {
             radioController.TryConnect();
-            StartCoroutine(PressAnimation());
         }
-        else
+        else if (!hasPower)
         {
-            Debug.LogWarning($"У кнопки {gameObject.name} не назначен radioController!");
+            Debug.Log("Нет электричества! Связь не установить");
         }
     }
 
     public string GetDescription()
     {
+        if (!hasPower) return "🔌 Нет электричества...";
         return "Установить связь [LMB]";
     }
 
     private IEnumerator PressAnimation()
     {
+        if (isPressed) yield break;
         isPressed = true;
 
         if (buttonRenderer != null && pressedMaterial != null)
@@ -82,19 +115,18 @@ public class ConnectButton : MonoBehaviour, Interactable
         }
 
         transform.localPosition = originalPosition;
-
         isPressed = false;
     }
 
     public void FlashSuccess()
     {
-        if (indicatorLight != null)
+        if (indicatorLight != null && hasPower)
             StartCoroutine(FlashLight(successColor));
     }
 
     public void FlashError()
     {
-        if (indicatorLight != null)
+        if (indicatorLight != null && hasPower)
             StartCoroutine(FlashLight(errorColor));
     }
 
@@ -102,19 +134,18 @@ public class ConnectButton : MonoBehaviour, Interactable
     {
         indicatorLight.enabled = true;
         indicatorLight.color = color;
-
         yield return new WaitForSeconds(0.5f);
-
         indicatorLight.enabled = false;
     }
 
     private void OnMouseEnter()
     {
-        if (!isPressed && buttonRenderer != null && hoverMaterial != null)
+        if (!isPressed && buttonRenderer != null && hoverMaterial != null && hasPower)
         {
             buttonRenderer.material = hoverMaterial;
         }
     }
+    
     private void OnMouseExit()
     {
         if (!isPressed && buttonRenderer != null && defaultMaterial != null)

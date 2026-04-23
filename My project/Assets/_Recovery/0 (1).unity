@@ -3073,7 +3073,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb6971a4791efec4da3b994c7735d851, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameClock
-  realSecondsPerGameHour: 900
+  realSecondsPerGameHour: 1800
   autoStart: 1
   clockText: {fileID: 1877887546}
   normalColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -9188,7 +9188,7 @@ MonoBehaviour:
   scheduledEvents:
   - eventName: "\u0423\u0434\u0430\u0440 \u043C\u043E\u043B\u043D\u0438\u0438 + \u043E\u0442\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435
       \u0441\u0432\u0435\u0442\u0430"
-    startTime: 200
+    startTime: 10
     onTrigger:
       m_PersistentCalls:
         m_Calls:
@@ -9216,13 +9216,6 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-    played: 0
-  - eventName: "\u0423\u0434\u0430\u0440 \u043C\u043E\u043B\u043D\u0438\u0438 + \u043E\u0442\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435
-      \u0441\u0432\u0435\u0442\u0430"
-    startTime: 200
-    onTrigger:
-      m_PersistentCalls:
-        m_Calls: []
     played: 0
   autoStart: 1
 --- !u!4 &1283545547
@@ -11955,11 +11948,11 @@ PrefabInstance:
       objectReference: {fileID: 149758666}
     - target: {fileID: 1556387190049101773, guid: 7a2370511587c02409e5330e522150c4, type: 3}
       propertyPath: scheduledCalls.Array.data[0].startTime
-      value: 1
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 1556387190049101773, guid: 7a2370511587c02409e5330e522150c4, type: 3}
       propertyPath: scheduledCalls.Array.data[1].startTime
-      value: 10
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 4045281944093883774, guid: 7a2370511587c02409e5330e522150c4, type: 3}
       propertyPath: m_Name

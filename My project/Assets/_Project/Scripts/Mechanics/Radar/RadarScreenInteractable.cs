@@ -8,15 +8,16 @@ public class RadarScreenInteractable : MonoBehaviour, Interactable
 
     [Header("Components")]
     [SerializeField] private Canvas radarCanvas;
-    [SerializeField] private RadarManager radarManager;
     [SerializeField] private MonoBehaviour playerController;
     [SerializeField] private MonoBehaviour cameraController;
 
     [Header("Settings")]
     [SerializeField] private KeyCode exitKey = KeyCode.Escape;
-    [SerializeField] private float transitionTime = 0f;
 
     private bool isUsingRadar = false;
+    
+    // ✅ Флаг электричества
+    private bool hasPower = true;
 
     void Start()
     {
@@ -30,24 +31,75 @@ public class RadarScreenInteractable : MonoBehaviour, Interactable
 
         if (radarCanvas != null && radarCamera != null)
             radarCanvas.worldCamera = radarCamera;
+
+        // ✅ Подписываемся на события электричества
+        if (PowerManager.Instance != null)
+        {
+            PowerManager.Instance.OnPowerOut += OnPowerOut;
+            PowerManager.Instance.OnPowerRestored += OnPowerRestored;
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (PowerManager.Instance != null)
+        {
+            PowerManager.Instance.OnPowerOut -= OnPowerOut;
+            PowerManager.Instance.OnPowerRestored -= OnPowerRestored;
+        }
+    }
+
+    private void OnPowerOut()
+    {
+        hasPower = false;
+        
+        // Если мы в радаре — выходим из него
+        if (isUsingRadar)
+        {
+            DeactivateRadar();
+        }
+        
+        // Отключаем Canvas визуально
+        if (radarCanvas != null)
+            radarCanvas.enabled = false;
+        
+        Debug.Log("Радар: электричество отключено");
+    }
+
+    private void OnPowerRestored()
+    {
+        hasPower = true;
+        
+        // Включаем Canvas обратно
+        if (radarCanvas != null)
+            radarCanvas.enabled = true;
+        
+        Debug.Log("Радар: электричество включено");
     }
 
     public void Interact()
     {
+        // ✅ Без электричества — не включаем радар
+        if (!hasPower)
+        {
+            Debug.Log("Нет электричества! Радар не работает.");
+            return;
+        }
+
         if (!isUsingRadar)
             ActivateRadar();
     }
 
     public string GetDescription()
     {
-        return "Использовать радар [E]";
+        if (!hasPower) return "🔌 Нет электричества...";
+        return "Использовать радар [LMB]";
     }
 
     private void ActivateRadar()
     {
         isUsingRadar = true;
 
-        // Скрываем точку в центре экрана
         if (CrosshairController.Instance != null)
             CrosshairController.Instance.Hide();
 
@@ -67,7 +119,6 @@ public class RadarScreenInteractable : MonoBehaviour, Interactable
 
     private void DeactivateRadar()
     {
-        // Показываем точку обратно
         if (CrosshairController.Instance != null)
             CrosshairController.Instance.Show();
 
