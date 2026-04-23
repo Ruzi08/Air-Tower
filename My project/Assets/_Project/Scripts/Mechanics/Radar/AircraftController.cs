@@ -206,10 +206,10 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
 
     private static string GenerateUniqueAircraftID()
     {
-        char letter1 = (char)random.Next('A', 'Z' + 1);
-        char letter2 = (char)random.Next('A', 'Z' + 1);
+        char letter1 = (char)random.Next('A', 'K' + 1);
+        char letter2 = (char)random.Next('A', 'K' + 1);
 
-        lastGeneratedNumber = (lastGeneratedNumber + 1) % 100;
+        lastGeneratedNumber = (lastGeneratedNumber + 1) % 50;
         string number = lastGeneratedNumber.ToString("D2");
 
         return $"{letter1}{letter2}{number}";

@@ -23,7 +23,7 @@ public class LetterSelector : MonoBehaviour
     }
     public void NextLetter()
     {
-        if (currentLetter < 'Z')
+        if (currentLetter < 'K')
             currentLetter++;
         else
             currentLetter = 'A';
@@ -37,7 +37,7 @@ public class LetterSelector : MonoBehaviour
         if (currentLetter > 'A')
             currentLetter--;
         else
-            currentLetter = 'Z';
+            currentLetter = 'K';
 
         UpdateDisplay();
         Debug.Log($"Буква изменена на: {currentLetter}");

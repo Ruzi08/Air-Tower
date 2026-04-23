@@ -9,9 +9,10 @@ public class NumberRegulator : MonoBehaviour, Interactable
 
     [Header("Settings")]
     [SerializeField] private int minValue = 0;
-    [SerializeField] private int maxValue = 99;
+    [SerializeField] private int maxValue = 49;
     [SerializeField] private int currentValue = 0;
     [SerializeField] private float mouseWheelSensitivity = 1f;
+    [SerializeField] private float mouseSensitivity = 0.5f;
     [SerializeField] private string format = "D2";
 
     [Header("Audio")]
@@ -24,16 +25,21 @@ public class NumberRegulator : MonoBehaviour, Interactable
     [SerializeField] private Material hoverMaterial;
     private Renderer dialRenderer;
 
-    [Header("Rotation (опционально)")]
+    [Header("Rotation")]
     [SerializeField] private Transform dialTransform;
     [SerializeField] private Vector3 rotationAxis = Vector3.right;
     [SerializeField] private bool invertRotation = false;
+
+    [Header("Camera Control")]
+    [SerializeField] private MonoBehaviour cameraController;
 
     public System.Action<int> OnValueChanged;
     public int CurrentValue => currentValue;
 
     private bool isDragging = false;
-    private float lastMouseY;
+    private float lastMouseX;
+    private bool wasCursorVisible;
+    private CursorLockMode wasCursorLocked;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -59,7 +65,17 @@ public class NumberRegulator : MonoBehaviour, Interactable
     private IEnumerator DragRoutine()
     {
         isDragging = true;
-        lastMouseY = Input.mousePosition.y;
+
+        wasCursorVisible = Cursor.visible;
+        wasCursorLocked = Cursor.lockState;
+
+        if (cameraController != null)
+            cameraController.enabled = false;
+
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.Confined;
+
+        lastMouseX = Input.mousePosition.x;
 
         // Визуальная обратная связь
         if (dialRenderer != null && activeMaterial != null)
@@ -72,20 +88,23 @@ public class NumberRegulator : MonoBehaviour, Interactable
         Cursor.lockState = CursorLockMode.None;
 
 
-        // Ждем пока игрок не отпустит E
-        while (Input.GetKey(KeyCode.Mouse0))
+        while (Input.GetMouseButton(0))
         {
-            float scroll = Input.GetAxis("Mouse ScrollWheel");
+            float currentMouseX = Input.mousePosition.x;
+            float deltaX = currentMouseX - lastMouseX;
 
-            if (Mathf.Abs(scroll) > 0.001f)
+            if (Mathf.Abs(deltaX) > 0.1f)
             {
-                int change = Mathf.RoundToInt(scroll * mouseWheelSensitivity * 10f);
+                int change = Mathf.RoundToInt(deltaX);
+
+                if (invertRotation)
+                    change = -change;
 
                 if (change != 0)
                 {
                     int newValue = currentValue + change;
 
-                    // Зацикливание или ограничение
+                    // Зацикливание
                     if (newValue > maxValue)
                         newValue = minValue;
                     else if (newValue < minValue)
@@ -98,15 +117,18 @@ public class NumberRegulator : MonoBehaviour, Interactable
                         UpdateDialRotation();
                         OnValueChanged?.Invoke(currentValue);
 
-                        // Звук
                         if (audioSource != null && dialSound != null)
                         {
                             audioSource.PlayOneShot(dialSound);
                         }
 
-                        Debug.Log($"Значение изменено на: {currentValue}");
+                        Debug.Log($"Значение: {currentValue}");
                     }
+
+
                 }
+
+                lastMouseX = currentMouseX;
             }
 
             yield return null;
@@ -115,6 +137,12 @@ public class NumberRegulator : MonoBehaviour, Interactable
 
         // Заканчиваем перетаскивание
         isDragging = false;
+
+        if (cameraController != null)
+            cameraController.enabled = true;
+
+        Cursor.visible = wasCursorVisible;
+        Cursor.lockState = wasCursorLocked;
 
         if (dialRenderer != null && defaultMaterial != null)
         {
