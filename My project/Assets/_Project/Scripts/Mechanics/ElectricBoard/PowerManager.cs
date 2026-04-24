@@ -19,12 +19,6 @@ public class PowerManager : MonoBehaviour
             Destroy(gameObject);
     }
     
-    void Start()
-    {
-        // При старте уведомляем все объекты о состоянии света
-        NotifyAllObjects();
-    }
-    
     public void PowerOut()
     {
         if (!hasPower) return;
@@ -32,7 +26,6 @@ public class PowerManager : MonoBehaviour
         hasPower = false;
         Debug.Log("⚡ Электричество отключено!");
         
-        // Вызываем событие
         OnPowerOut?.Invoke();
     }
     
@@ -43,20 +36,7 @@ public class PowerManager : MonoBehaviour
         hasPower = true;
         Debug.Log("🔌 Электричество восстановлено!");
         
-        // Вызываем событие
         OnPowerRestored?.Invoke();
-    }
-    
-    // Принудительно уведомить все объекты
-    private void NotifyAllObjects()
-    {
-        Lamp[] lamps = FindObjectsOfType<Lamp>(true);
-        foreach (Lamp lamp in lamps)
-            lamp.UpdatePowerState(hasPower);
-        
-        LightSwitch[] switches = FindObjectsOfType<LightSwitch>(true);
-        foreach (LightSwitch sw in switches)
-            sw.UpdatePowerState(hasPower);
     }
     
     public bool HasPower() => hasPower;

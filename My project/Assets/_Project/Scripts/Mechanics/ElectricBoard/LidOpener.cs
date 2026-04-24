@@ -3,8 +3,11 @@ using UnityEngine;
 public class LidOpener : MonoBehaviour, Interactable
 {
     [Header("Настройки открывания")]
-    public Vector3 openRotation = new Vector3(0, -90, 0);  // Поворот при открытии
-    public float openSpeed = 180f;  // Скорость вращения (градусов в секунду)
+    public Vector3 openRotation = new Vector3(0, -90, 0);
+    public float openSpeed = 180f;
+    
+    [Header("Ссылки")]
+    public BreakerPanel panel;
     
     private Quaternion closedRotation;
     private Quaternion targetRotation;
@@ -13,7 +16,6 @@ public class LidOpener : MonoBehaviour, Interactable
     
     void Start()
     {
-        // Запоминаем начальное положение (закрыто)
         closedRotation = transform.localRotation;
         targetRotation = closedRotation;
     }
@@ -22,18 +24,24 @@ public class LidOpener : MonoBehaviour, Interactable
     {
         if (isAnimating)
         {
-            // Плавно поворачиваем к цели
             transform.localRotation = Quaternion.RotateTowards(
                 transform.localRotation, 
                 targetRotation, 
                 openSpeed * Time.deltaTime
             );
             
-            // Если дошли до цели — анимация закончена
             if (Quaternion.Angle(transform.localRotation, targetRotation) < 0.1f)
             {
                 transform.localRotation = targetRotation;
                 isAnimating = false;
+                
+                if (panel != null)
+                {
+                    if (isOpen)
+                        panel.OnLidOpened();
+                    else
+                        panel.OnLidClosed();
+                }
             }
         }
     }
@@ -50,6 +58,11 @@ public class LidOpener : MonoBehaviour, Interactable
             targetRotation = closedRotation;
         
         isAnimating = true;
+    }
+    
+    public bool IsOpen()
+    {
+        return isOpen;
     }
     
     public string GetDescription()

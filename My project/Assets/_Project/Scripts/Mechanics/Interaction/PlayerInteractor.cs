@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.EventSystems;  // ← ДОБАВИТЬ
 
 public class PlayerInteractor : MonoBehaviour
 {
@@ -22,7 +21,7 @@ public class PlayerInteractor : MonoBehaviour
     
     void Update()
     {
-        // Если диалог активен — не взаимодействуем с 3D
+        // Если диалог активен — не взаимодействуем
         if (DialogueManager.Instance != null && DialogueManager.Instance.IsDialogueActive)
         {
             if (crosshair != null)
@@ -37,11 +36,6 @@ public class PlayerInteractor : MonoBehaviour
         {
             TryInteract();
         }
-    }
-    
-    private bool IsPointerOverUI()
-    {
-        return EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
     }
     
     private void CheckLookAt()
@@ -73,18 +67,14 @@ public class PlayerInteractor : MonoBehaviour
     
     private void TryInteract()
     {
-        // Если курсор над UI — НЕ ВЗАИМОДЕЙСТВУЕМ с 3D
-        if (IsPointerOverUI())
-        {
-            Debug.Log("🖱️ Курсор над UI, игнорирую 3D объекты");
-            return;
-        }
-        
         if (playerCamera == null) return;
         
-        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
-        RaycastHit hit;
+        // ✅ РЕЙКАСТ ИЗ ПОЗИЦИИ МЫШИ (а не из центра камеры)
+        Ray ray = playerCamera.ScreenPointToRay(Input.mousePosition);
         
+        Debug.DrawRay(ray.origin, ray.direction * interactionDistance, Color.red, 2f);
+        
+        RaycastHit hit;
         if (Physics.Raycast(ray, out hit, interactionDistance, interactableLayer))
         {
             Debug.Log($"🎯 Попал в: {hit.collider.gameObject.name}");
@@ -96,6 +86,14 @@ public class PlayerInteractor : MonoBehaviour
                 Debug.Log($"✅ Вызываю Interact() на {hit.collider.gameObject.name}");
                 interactable.Interact();
             }
+            else
+            {
+                Debug.Log($"❌ Нет компонента Interactable на {hit.collider.gameObject.name}");
+            }
+        }
+        else
+        {
+            Debug.Log("❌ Луч никуда не попал");
         }
     }
 }
