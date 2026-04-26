@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: b1eee2a6c3d5dbe47a0ec71e4220ae3c
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - normalMaterial: {fileID: -3522955778539423533, guid: d6ecbc8fd7d1f944f9daf4d94e1fe1ce, type: 3}
+  - brokenMaterial: {fileID: 4874126678125670354, guid: d6ecbc8fd7d1f944f9daf4d94e1fe1ce, type: 3}
+  - bulbRenderer: {instanceID: 0}
+  - bulbOnMaterial: {fileID: -6629797300637803691, guid: e62e99f472e400c49875d5becef0e15d, type: 3}
+  - bulbOffMaterial: {fileID: 4874126678125670354, guid: d6ecbc8fd7d1f944f9daf4d94e1fe1ce, type: 3}
+  - panel: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
