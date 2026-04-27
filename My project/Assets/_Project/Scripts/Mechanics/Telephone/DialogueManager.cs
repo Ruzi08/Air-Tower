@@ -228,9 +228,9 @@ public class DialogueManager : MonoBehaviour
         
         OnDialogueEnd?.Invoke();
         
-        if (phone != null && phone.hangUpSound != null)
+        if (phone != null && phone.telephoneSound != null)
         {
-            AudioSource.PlayClipAtPoint(phone.hangUpSound, phone.transform.position, phone.hangUpVolume);
+            phone.telephoneSound.PlayHangUp();
         }
     }
     

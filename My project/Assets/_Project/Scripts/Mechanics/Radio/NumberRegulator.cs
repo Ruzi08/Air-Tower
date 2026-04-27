@@ -16,9 +16,7 @@ public class NumberRegulator : MonoBehaviour, Interactable
     [SerializeField] private string format = "D2";
 
     [Header("Audio")]
-    [SerializeField] private AudioClip dialSound;
-    private AudioSource audioSource;
-    private SoundRotateButton SoundRotateButton;
+    [SerializeField] private SoundRotateButton soundRotateButton; // теперь звук только через него
 
     [Header("Visual")]
     [SerializeField] private Material defaultMaterial;
@@ -42,19 +40,16 @@ public class NumberRegulator : MonoBehaviour, Interactable
     private bool wasCursorVisible;
     private CursorLockMode wasCursorLocked;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        SoundRotateButton = GetComponent<SoundRotateButton>();
-        
-        // Проверяем наличие компонента
-        if (SoundRotateButton == null)
-        {
-            Debug.LogWarning("SoundRotateButton component not found on the same GameObject. Please add it for random sound playback.", this);
-        }
-        audioSource = GetComponent<AudioSource>();
-        dialRenderer = GetComponent<Renderer>();
+        // Поиск SoundRotateButton, если не назначен вручную
+        if (soundRotateButton == null)
+            soundRotateButton = GetComponent<SoundRotateButton>();
 
+        if (soundRotateButton == null)
+            Debug.LogWarning("SoundRotateButton component not found on the same GameObject. No sound will be played.", this);
+
+        dialRenderer = GetComponent<Renderer>();
         currentValue = Mathf.Clamp(currentValue, minValue, maxValue);
         UpdateDisplay();
         UpdateDialRotation();
@@ -85,16 +80,8 @@ public class NumberRegulator : MonoBehaviour, Interactable
 
         lastMouseX = Input.mousePosition.x;
 
-        // Визуальная обратная связь
         if (dialRenderer != null && activeMaterial != null)
-        {
             dialRenderer.material = activeMaterial;
-        }
-
-        // Показываем курсор
-        Cursor.visible = true;
-        Cursor.lockState = CursorLockMode.None;
-
 
         while (Input.GetMouseButton(0))
         {
@@ -125,15 +112,11 @@ public class NumberRegulator : MonoBehaviour, Interactable
                         UpdateDialRotation();
                         OnValueChanged?.Invoke(currentValue);
 
-                        if (audioSource != null && dialSound != null)
-                        {
-                            audioSource.PlayOneShot(dialSound);
-                        }
+                        // Звук через SoundRotateButton
+                        PlayRandomDialSound();
 
                         Debug.Log($"Значение: {currentValue}");
                     }
-
-
                 }
 
                 lastMouseX = currentMouseX;
@@ -142,8 +125,6 @@ public class NumberRegulator : MonoBehaviour, Interactable
             yield return null;
         }
 
-
-        // Заканчиваем перетаскивание
         isDragging = false;
 
         if (cameraController != null)
@@ -153,35 +134,23 @@ public class NumberRegulator : MonoBehaviour, Interactable
         Cursor.lockState = wasCursorLocked;
 
         if (dialRenderer != null && defaultMaterial != null)
-        {
             dialRenderer.material = defaultMaterial;
-        }
 
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
-
     }
-    
+
     private void PlayRandomDialSound()
     {
-        if (SoundRotateButton != null)
-        {
-            // Проигрываем случайный звук из списка
-            SoundRotateButton.PlayRandomSound();
-        }
-        else if (audioSource != null && dialSound != null)
-        {
-            audioSource.PlayOneShot(dialSound);
-        }
+        if (soundRotateButton != null)
+            soundRotateButton.PlayRandomSound();
+        // иначе молча игнорируем — звука нет
     }
 
-    
     private void UpdateDisplay()
     {
         if (displayText != null)
-        {
             displayText.text = currentValue.ToString(format);
-        }
     }
 
     private void UpdateDialRotation()
@@ -196,15 +165,12 @@ public class NumberRegulator : MonoBehaviour, Interactable
     private void OnMouseEnter()
     {
         if (!isDragging && dialRenderer != null && hoverMaterial != null)
-        {
             dialRenderer.material = hoverMaterial;
-        }
     }
+
     private void OnMouseExit()
     {
         if (!isDragging && dialRenderer != null && defaultMaterial != null)
-        {
             dialRenderer.material = defaultMaterial;
-        }
     }
 }

@@ -40,6 +40,7 @@ AudioMixerController:
     - 6d760950e8214684c89f7fc6d1c6bcf8
     - cb899531886dc844790e061a78f013ba
     - 9b0d90eb7dfbc53438fb51eed1c15aee
+    - 3794f9afb383af34dbaa2b07261030ad
     name: View
   m_CurrentViewIndex: 0
   m_TargetSnapshot: {fileID: 24500006}
@@ -55,6 +56,7 @@ AudioMixerGroupController:
   m_Children:
   - {fileID: -7837778059098314476}
   - {fileID: 8704216637773157809}
+  - {fileID: 3227188480563751566}
   m_Volume: a4c845958ead8844eb6f8880983b0219
   m_Pitch: e8f4af980ed37e241ba27a94228b56bd
   m_Send: 00000000000000000000000000000000
@@ -87,8 +89,28 @@ AudioMixerSnapshotController:
   m_Name: Snapshot
   m_AudioMixer: {fileID: 24100000}
   m_SnapshotID: 55d983263fa314042bc099f00982200d
-  m_FloatValues: {}
+  m_FloatValues:
+    e675d8061353cca4d98562f0b9efa91e: 7.9871106
   m_TransitionOverrides: {}
+--- !u!243 &3227188480563751566
+AudioMixerGroupController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: TelephoneRing
+  m_AudioMixer: {fileID: 24100000}
+  m_GroupID: 3794f9afb383af34dbaa2b07261030ad
+  m_Children: []
+  m_Volume: e675d8061353cca4d98562f0b9efa91e
+  m_Pitch: bdeaae2cac7029d408ce32913ca6929b
+  m_Send: 00000000000000000000000000000000
+  m_Effects:
+  - {fileID: 7964819127483906998}
+  m_UserColorIndex: 0
+  m_Mute: 0
+  m_Solo: 0
+  m_BypassEffects: 0
 --- !u!244 &3698343340834819671
 AudioMixerEffectController:
   m_ObjectHideFlags: 3
@@ -113,6 +135,20 @@ AudioMixerEffectController:
   m_EffectID: 252fe7ae59c533b4f9b19ae2499f890f
   m_EffectName: Attenuation
   m_MixLevel: fc16611ee02dd4b4f9c953511e9ed62e
+  m_Parameters: []
+  m_SendTarget: {fileID: 0}
+  m_EnableWetMix: 0
+  m_Bypass: 0
+--- !u!244 &7964819127483906998
+AudioMixerEffectController:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_EffectID: 9bc3f0f4589963b4190bd76d16201761
+  m_EffectName: Attenuation
+  m_MixLevel: 3169c54b5ab7dd04a953149106066c0b
   m_Parameters: []
   m_SendTarget: {fileID: 0}
   m_EnableWetMix: 0
