@@ -5,6 +5,7 @@ public class ConnectButton : MonoBehaviour, Interactable
 {
     [Header("References")]
     [SerializeField] private RadioController radioController;
+    [SerializeField] private float maxInteractDistance = 2.5f;
 
     [Header("Visual")]
     [SerializeField] private Material defaultMaterial;
@@ -20,6 +21,10 @@ public class ConnectButton : MonoBehaviour, Interactable
     [Header("Audio")]
     [SerializeField] private AudioClip clickSound;
     private AudioSource audioSource;
+
+    [Header("Distance Check")]
+    [SerializeField] private MonoBehaviour cameraController;
+    [SerializeField] private Transform distanceCheckTarget;
 
     private Renderer buttonRenderer;
     private Vector3 originalPosition;
@@ -42,6 +47,14 @@ public class ConnectButton : MonoBehaviour, Interactable
         {
             PowerManager.Instance.OnPowerOut += OnPowerOut;
             PowerManager.Instance.OnPowerRestored += OnPowerRestored;
+        }
+    }
+
+    private void Update()
+    {
+        if (!isPressed && buttonRenderer != null && defaultMaterial != null && IsOutOfRange() && buttonRenderer.material == hoverMaterial)
+        {
+            buttonRenderer.material = defaultMaterial;
         }
     }
 
@@ -70,6 +83,11 @@ public class ConnectButton : MonoBehaviour, Interactable
 
     public void Interact()
     {
+        if (IsOutOfRange())
+        {
+            return;
+        }
+
         // ✅ Анимация и звук ВСЕГДА
         StartCoroutine(PressAnimation());
 
@@ -140,7 +158,7 @@ public class ConnectButton : MonoBehaviour, Interactable
 
     private void OnMouseEnter()
     {
-        if (!isPressed && buttonRenderer != null && hoverMaterial != null && hasPower)
+        if (!isPressed && !IsOutOfRange() && buttonRenderer != null && hoverMaterial != null && hasPower)
         {
             buttonRenderer.material = hoverMaterial;
         }
@@ -152,5 +170,36 @@ public class ConnectButton : MonoBehaviour, Interactable
         {
             buttonRenderer.material = defaultMaterial;
         }
+    }
+
+    private bool IsOutOfRange()
+    {
+        Transform target = GetDistanceCheckTarget();
+        if (target == null)
+        {
+            return false;
+        }
+
+        return Vector3.Distance(target.position, transform.position) > maxInteractDistance;
+    }
+
+    private Transform GetDistanceCheckTarget()
+    {
+        if (distanceCheckTarget != null)
+        {
+            return distanceCheckTarget;
+        }
+
+        if (cameraController != null)
+        {
+            return cameraController.transform;
+        }
+
+        if (Camera.main != null)
+        {
+            return Camera.main.transform;
+        }
+
+        return null;
     }
 }

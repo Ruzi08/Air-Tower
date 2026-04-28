@@ -13,6 +13,7 @@ public class NumberRegulator : MonoBehaviour, Interactable
     [SerializeField] private int currentValue = 0;
     [SerializeField] private float mouseWheelSensitivity = 1f;
     [SerializeField] private float mouseSensitivity = 0.5f;
+    [SerializeField] private float maxInteractDistance = 2.5f;
     [SerializeField] private string format = "D2";
 
     [Header("Audio")]
@@ -33,6 +34,7 @@ public class NumberRegulator : MonoBehaviour, Interactable
 
     [Header("Camera Control")]
     [SerializeField] private MonoBehaviour cameraController;
+    [SerializeField] private Transform distanceCheckTarget;
 
     public System.Action<int> OnValueChanged;
     public int CurrentValue => currentValue;
@@ -61,6 +63,14 @@ public class NumberRegulator : MonoBehaviour, Interactable
         UpdateDialRotation();
     }
 
+    private void Update()
+    {
+        if (!isDragging && dialRenderer != null && defaultMaterial != null && IsOutOfRange() && dialRenderer.material == hoverMaterial)
+        {
+            dialRenderer.material = defaultMaterial;
+        }
+    }
+
     public void Interact()
     {
         StartCoroutine(DragRoutine());
@@ -81,7 +91,6 @@ public class NumberRegulator : MonoBehaviour, Interactable
         if (cameraController != null)
             cameraController.enabled = false;
 
-        Cursor.visible = true;
         Cursor.lockState = CursorLockMode.Confined;
 
         lastMouseX = Input.mousePosition.x;
@@ -93,13 +102,17 @@ public class NumberRegulator : MonoBehaviour, Interactable
         }
 
         // Показываем курсор
-        Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
         dragAccumulator = 0f;
 
 
         while (Input.GetMouseButton(0))
         {
+            if (IsOutOfRange())
+            {
+                break;
+            }
+
             float currentMouseX = Input.mousePosition.x;
             float deltaX = currentMouseX - lastMouseX;
 
@@ -146,22 +159,7 @@ public class NumberRegulator : MonoBehaviour, Interactable
 
 
         // Заканчиваем перетаскивание
-        isDragging = false;
-
-        if (cameraController != null)
-            cameraController.enabled = true;
-
-        Cursor.visible = wasCursorVisible;
-        Cursor.lockState = wasCursorLocked;
-
-        if (dialRenderer != null && defaultMaterial != null)
-        {
-            dialRenderer.material = defaultMaterial;
-        }
-
-        Cursor.visible = false;
-        Cursor.lockState = CursorLockMode.Locked;
-
+        StopDragging();
     }
     
     private void PlayRandomDialSound()
@@ -197,6 +195,56 @@ public class NumberRegulator : MonoBehaviour, Interactable
         return minValue + (((value - minValue) % range) + range) % range;
     }
 
+    private bool IsOutOfRange()
+    {
+        Transform target = GetDistanceCheckTarget();
+        if (target == null)
+        {
+            return false;
+        }
+
+        return Vector3.Distance(target.position, transform.position) > maxInteractDistance;
+    }
+
+    private Transform GetDistanceCheckTarget()
+    {
+        if (distanceCheckTarget != null)
+        {
+            return distanceCheckTarget;
+        }
+
+        if (cameraController != null)
+        {
+            return cameraController.transform;
+        }
+
+        if (Camera.main != null)
+        {
+            return Camera.main.transform;
+        }
+
+        return null;
+    }
+
+    private void StopDragging()
+    {
+        isDragging = false;
+
+        if (cameraController != null)
+            cameraController.enabled = true;
+
+        Cursor.visible = wasCursorVisible;
+        Cursor.lockState = wasCursorLocked;
+
+        if (dialRenderer != null && defaultMaterial != null)
+        {
+            dialRenderer.material = defaultMaterial;
+        }
+
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
+    }
+
     private void UpdateDialRotation()
     {
         if (dialTransform != null)
@@ -208,7 +256,7 @@ public class NumberRegulator : MonoBehaviour, Interactable
 
     private void OnMouseEnter()
     {
-        if (!isDragging && dialRenderer != null && hoverMaterial != null)
+        if (!isDragging && !IsOutOfRange() && dialRenderer != null && hoverMaterial != null)
         {
             dialRenderer.material = hoverMaterial;
         }
