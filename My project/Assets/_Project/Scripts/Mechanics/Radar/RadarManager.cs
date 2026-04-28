@@ -60,7 +60,9 @@ public class RadarManager : MonoBehaviour
     [SerializeField] private Color targetZoneColor = new Color(0f, 1f, 0f, 0.4f);
     [SerializeField] private float targetZoneWidth = 0.12f;
     [SerializeField] private float edgeDetectionEpsilon = 0.001f;
-
+    
+    public System.Action OnAircraftSpawned;
+    
     private Image targetZoneImage;
     private RectTransform targetZoneRect;
 
@@ -90,7 +92,8 @@ public class RadarManager : MonoBehaviour
     {
         InitializeContainer();
     }
-
+    
+    public int GetActiveAircraftCount() => activeAircrafts.Count;
     private void Start()
     {
         if (radarArea == null)
@@ -230,6 +233,7 @@ public class RadarManager : MonoBehaviour
 
         activeAircrafts.Add(ac);
         CreateTrajectoryLineForAircraft(ac);
+        OnAircraftSpawned?.Invoke();
     }
 
     private Vector2 GetRandomEdgePoint()

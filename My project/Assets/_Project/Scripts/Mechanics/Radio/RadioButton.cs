@@ -13,10 +13,7 @@ public class RadioButton : MonoBehaviour, Interactable
     [SerializeField] private Material pressedMaterial;
     [SerializeField] private Material hoverMaterial;
     [SerializeField] private float pressDepth = 0.0001f;
-
-    [Header("Audio")]
-    [SerializeField] private AudioClip clickSound;
-    private AudioSource audioSource;
+    
 
     [Header("Distance Check")]
     [SerializeField] private MonoBehaviour cameraController;
@@ -26,11 +23,12 @@ public class RadioButton : MonoBehaviour, Interactable
     private Vector3 originalPosition;
     private bool isPressed = false;
     private bool hasPower = true;
+    private RadioSound radio;
 
     void Start()
     {
         buttonRenderer = GetComponent<Renderer>();
-        audioSource = GetComponent<AudioSource>();
+        radio = GetComponentInParent<RadioSound>();
         originalPosition = transform.localPosition;
 
         if (defaultMaterial == null && buttonRenderer != null)
@@ -123,11 +121,8 @@ public class RadioButton : MonoBehaviour, Interactable
         transform.position = startWorldPos + pressDirection * pressDepth;
 
         Debug.Log($"Позиция при нажатии (world): {transform.position}");
-
-        if (audioSource != null && clickSound != null)
-        {
-            audioSource.PlayOneShot(clickSound);
-        }
+        
+        radio.Click();
 
         yield return new WaitForSeconds(0.1f);
 

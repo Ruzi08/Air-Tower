@@ -7,8 +7,8 @@ using UnityEngine;
 public class ThunderSound : Sound
 {
     [Header("Thunder Settings")]
-    public float minDistance = 10f;   // Минимальное расстояние до молнии
-    public float maxDistance = 50f;   // Максимальное расстояние до молнии
+    public float minThDistance = 10f;   // Минимальное расстояние до молнии
+    public float maxThDistance = 50f;   // Максимальное расстояние до молнии
     public bool autoDestroy = true;   // Уничтожить объект после воспроизведения
     public float destroyDelay = 0.5f; // Задержка перед уничтожением (чтобы звук доиграл)
 
@@ -48,7 +48,7 @@ public class ThunderSound : Sound
 
         // Выбираем случайное направление (по горизонтали) и расстояние
         Vector2 randomDirection = Random.insideUnitCircle.normalized;
-        float distance = Random.Range(minDistance, maxDistance);
+        float distance = Random.Range(minThDistance, maxThDistance);
         Vector3 randomOffset = new Vector3(randomDirection.x, 0f, randomDirection.y) * distance;
         
         // Немного случайной высоты (опционально)

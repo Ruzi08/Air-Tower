@@ -17,10 +17,7 @@ public class ConnectButton : MonoBehaviour, Interactable
     [SerializeField] private Light indicatorLight;
     [SerializeField] private Color successColor = Color.green;
     [SerializeField] private Color errorColor = Color.red;
-
-    [Header("Audio")]
-    [SerializeField] private AudioClip clickSound;
-    private AudioSource audioSource;
+    
 
     [Header("Distance Check")]
     [SerializeField] private MonoBehaviour cameraController;
@@ -30,11 +27,12 @@ public class ConnectButton : MonoBehaviour, Interactable
     private Vector3 originalPosition;
     private bool isPressed = false;
     private bool hasPower = true;
+    private RadioSound radio;
 
     void Start()
     {
         buttonRenderer = GetComponent<Renderer>();
-        audioSource = GetComponent<AudioSource>();
+        radio = GetComponentInParent<RadioSound>();
         originalPosition = transform.localPosition;
 
         if (defaultMaterial == null && buttonRenderer != null)
@@ -120,10 +118,7 @@ public class ConnectButton : MonoBehaviour, Interactable
 
         transform.localPosition = originalPosition + Vector3.down * pressDepth;
 
-        if (audioSource != null && clickSound != null)
-        {
-            audioSource.PlayOneShot(clickSound);
-        }
+        radio.Priem();
 
         yield return new WaitForSeconds(0.2f);
 
