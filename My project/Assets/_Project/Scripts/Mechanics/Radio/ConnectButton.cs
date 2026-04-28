@@ -107,29 +107,36 @@ public class ConnectButton : MonoBehaviour, Interactable
     }
 
     private IEnumerator PressAnimation()
+{
+    if (isPressed) yield break;
+    isPressed = true;
+
+    if (buttonRenderer != null && pressedMaterial != null)
     {
-        if (isPressed) yield break;
-        isPressed = true;
-
-        if (buttonRenderer != null && pressedMaterial != null)
-        {
-            buttonRenderer.material = pressedMaterial;
-        }
-
-        transform.localPosition = originalPosition + Vector3.down * pressDepth;
-
-        radio.Priem();
-
-        yield return new WaitForSeconds(0.2f);
-
-        if (buttonRenderer != null && defaultMaterial != null)
-        {
-            buttonRenderer.material = defaultMaterial;
-        }
-
-        transform.localPosition = originalPosition;
-        isPressed = false;
+        buttonRenderer.material = pressedMaterial;
     }
+
+    // ✅ Сохраняем МИРОВУЮ позицию и вращение
+    Vector3 originalWorldPos = transform.position;
+    Quaternion originalWorldRot = transform.rotation;
+    
+    // Двигаем объект "внутрь" относительно его собственной ориентации
+    // -transform.up двигает объект вниз относительно его локальной системы координат
+    transform.position -= transform.forward * pressDepth;
+
+    radio.Priem();
+
+    yield return new WaitForSeconds(0.2f);
+
+    if (buttonRenderer != null && defaultMaterial != null)
+    {
+        buttonRenderer.material = defaultMaterial;
+    }
+
+    // Возвращаем точную мировую позицию
+    transform.position = originalWorldPos;
+    isPressed = false;
+}
 
     public void FlashSuccess()
     {
