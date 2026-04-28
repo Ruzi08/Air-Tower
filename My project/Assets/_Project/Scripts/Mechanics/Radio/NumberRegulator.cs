@@ -39,6 +39,7 @@ public class NumberRegulator : MonoBehaviour, Interactable
 
     private bool isDragging = false;
     private float lastMouseX;
+    private float dragAccumulator;
     private bool wasCursorVisible;
     private CursorLockMode wasCursorLocked;
 
@@ -94,6 +95,7 @@ public class NumberRegulator : MonoBehaviour, Interactable
         // Показываем курсор
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
+        dragAccumulator = 0f;
 
 
         while (Input.GetMouseButton(0))
@@ -103,20 +105,20 @@ public class NumberRegulator : MonoBehaviour, Interactable
 
             if (Mathf.Abs(deltaX) > 0.1f)
             {
-                int change = Mathf.RoundToInt(deltaX);
+                dragAccumulator += deltaX * Mathf.Max(0.01f, mouseSensitivity);
+                int rawChange = (int)dragAccumulator;
+                int change = rawChange;
 
                 if (invertRotation)
                     change = -change;
 
                 if (change != 0)
                 {
+                    dragAccumulator -= rawChange;
                     int newValue = currentValue + change;
 
                     // Зацикливание
-                    if (newValue > maxValue)
-                        newValue = minValue;
-                    else if (newValue < minValue)
-                        newValue = maxValue;
+                    newValue = WrapValue(newValue);
 
                     if (newValue != currentValue)
                     {
@@ -182,6 +184,17 @@ public class NumberRegulator : MonoBehaviour, Interactable
         {
             displayText.text = currentValue.ToString(format);
         }
+    }
+
+    private int WrapValue(int value)
+    {
+        int range = maxValue - minValue + 1;
+        if (range <= 0)
+        {
+            return minValue;
+        }
+
+        return minValue + (((value - minValue) % range) + range) % range;
     }
 
     private void UpdateDialRotation()
