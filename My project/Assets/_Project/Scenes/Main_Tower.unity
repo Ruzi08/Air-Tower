@@ -1158,6 +1158,37 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Lamp
   lightSource: {fileID: 0}
   startOn: 1
+--- !u!1 &317828520
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 317828521}
+  m_Layer: 0
+  m_Name: TelephoneAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &317828521
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 317828520}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.1858784, y: 0.49848792, z: -0.83927625, w: -0.11213543}
+  m_LocalPosition: {x: 0.267, y: -0.111, z: 0.402}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 330585546}
+  m_LocalEulerAnglesHint: {x: 52.66, y: -44.324, z: -218.014}
 --- !u!1 &328967593
 GameObject:
   m_ObjectHideFlags: 0
@@ -1357,6 +1388,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 342040313}
+  - {fileID: 317828521}
   - {fileID: 1485724721}
   m_Father: {fileID: 1723329499}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1554,7 +1586,7 @@ AudioSource:
   m_GameObject: {fileID: 375419379}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: -4697775348444791383, guid: 839800bfac5eadc4c8a820971871d2e5, type: 2}
+  OutputAudioMixerGroup: {fileID: -7837778059098314476, guid: 839800bfac5eadc4c8a820971871d2e5, type: 2}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
@@ -2117,31 +2149,31 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: d6ecbc8fd7d1f944f9daf4d94e1fe1ce, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.9999025
+      value: 0.9998802
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: d6ecbc8fd7d1f944f9daf4d94e1fe1ce, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.00040810936
+      value: 0.00070980395
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: d6ecbc8fd7d1f944f9daf4d94e1fe1ce, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.011164079
+      value: -0.0110869035
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: d6ecbc8fd7d1f944f9daf4d94e1fe1ce, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.008379159
+      value: 0.010784003
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: d6ecbc8fd7d1f944f9daf4d94e1fe1ce, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 0.057
+      value: 0.095
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: d6ecbc8fd7d1f944f9daf4d94e1fe1ce, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: -1.279
+      value: -1.27
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: d6ecbc8fd7d1f944f9daf4d94e1fe1ce, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 0.96
+      value: 1.235
       objectReference: {fileID: 0}
     - target: {fileID: -8391222552659086748, guid: d6ecbc8fd7d1f944f9daf4d94e1fe1ce, type: 3}
       propertyPath: m_IsActive
@@ -4824,6 +4856,11 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -8367231247473855917, guid: d6ecbc8fd7d1f944f9daf4d94e1fe1ce, type: 3}
+--- !u!4 &767516293 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1951859956840284641, guid: dc3763e3754a64944852aa194dfdede1, type: 3}
+  m_PrefabInstance: {fileID: 4188470015921525021}
+  m_PrefabAsset: {fileID: 0}
 --- !u!64 &781076022
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -10647,7 +10684,7 @@ AudioSource:
   m_GameObject: {fileID: 1200550908}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: -4697775348444791383, guid: 839800bfac5eadc4c8a820971871d2e5, type: 2}
+  OutputAudioMixerGroup: {fileID: -7837778059098314476, guid: 839800bfac5eadc4c8a820971871d2e5, type: 2}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
@@ -11188,7 +11225,7 @@ MonoBehaviour:
   scheduledEvents:
   - eventName: "\u0423\u0434\u0430\u0440 \u043C\u043E\u043B\u043D\u0438\u0438 + \u043E\u0442\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435
       \u0441\u0432\u0435\u0442\u0430"
-    startTime: 1
+    startTime: 10
     onTrigger:
       m_PersistentCalls:
         m_Calls:
@@ -11353,19 +11390,19 @@ PrefabInstance:
     - target: {fileID: 6975371550310844920, guid: c4561c6fb7be01148ab8378cc5228961, type: 3}
       propertyPath: OutputAudioMixerGroup
       value: 
-      objectReference: {fileID: -4697775348444791383, guid: 839800bfac5eadc4c8a820971871d2e5, type: 2}
+      objectReference: {fileID: -7837778059098314476, guid: 839800bfac5eadc4c8a820971871d2e5, type: 2}
     - target: {fileID: 7650656801529052498, guid: c4561c6fb7be01148ab8378cc5228961, type: 3}
       propertyPath: OutputAudioMixerGroup
       value: 
-      objectReference: {fileID: -4697775348444791383, guid: 839800bfac5eadc4c8a820971871d2e5, type: 2}
+      objectReference: {fileID: -7837778059098314476, guid: 839800bfac5eadc4c8a820971871d2e5, type: 2}
     - target: {fileID: 7831668179143088467, guid: c4561c6fb7be01148ab8378cc5228961, type: 3}
       propertyPath: OutputAudioMixerGroup
       value: 
-      objectReference: {fileID: -4697775348444791383, guid: 839800bfac5eadc4c8a820971871d2e5, type: 2}
+      objectReference: {fileID: -7837778059098314476, guid: 839800bfac5eadc4c8a820971871d2e5, type: 2}
     - target: {fileID: 8240196740724583353, guid: c4561c6fb7be01148ab8378cc5228961, type: 3}
       propertyPath: OutputAudioMixerGroup
       value: 
-      objectReference: {fileID: -4697775348444791383, guid: 839800bfac5eadc4c8a820971871d2e5, type: 2}
+      objectReference: {fileID: -7837778059098314476, guid: 839800bfac5eadc4c8a820971871d2e5, type: 2}
     - target: {fileID: 8563991194152681758, guid: c4561c6fb7be01148ab8378cc5228961, type: 3}
       propertyPath: maxSpeed
       value: 0.008
@@ -14564,10 +14601,6 @@ PrefabInstance:
       propertyPath: MinDistance
       value: 1.5937614
       objectReference: {fileID: 0}
-    - target: {fileID: 930511279365257515, guid: 54a13ceeda554514d9b9cba6bed655bb, type: 3}
-      propertyPath: OutputAudioMixerGroup
-      value: 
-      objectReference: {fileID: -7837778059098314476, guid: 839800bfac5eadc4c8a820971871d2e5, type: 2}
     - target: {fileID: 4314835021397867441, guid: 54a13ceeda554514d9b9cba6bed655bb, type: 3}
       propertyPath: m_LocalPosition.x
       value: 7.893
@@ -14766,6 +14799,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 1990098651552003583, guid: dc3763e3754a64944852aa194dfdede1, type: 3}
+      propertyPath: phoneMesh
+      value: 
+      objectReference: {fileID: 767516293}
+    - target: {fileID: 1990098651552003583, guid: dc3763e3754a64944852aa194dfdede1, type: 3}
       propertyPath: hangUpSound
       value: 
       objectReference: {fileID: 0}
@@ -14778,9 +14815,57 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 981735743}
     - target: {fileID: 1990098651552003583, guid: dc3763e3754a64944852aa194dfdede1, type: 3}
+      propertyPath: phoneLookPoint
+      value: 
+      objectReference: {fileID: 317828521}
+    - target: {fileID: 1990098651552003583, guid: dc3763e3754a64944852aa194dfdede1, type: 3}
       propertyPath: telephoneSound
       value: 
       objectReference: {fileID: 1617145858}
+    - target: {fileID: 1990098651552003583, guid: dc3763e3754a64944852aa194dfdede1, type: 3}
+      propertyPath: phoneTargetAnchor
+      value: 
+      objectReference: {fileID: 317828521}
+    - target: {fileID: 1990098651552003583, guid: dc3763e3754a64944852aa194dfdede1, type: 3}
+      propertyPath: phoneAnimationSpeed
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 1990098651552003583, guid: dc3763e3754a64944852aa194dfdede1, type: 3}
+      propertyPath: phonePickupOffset.x
+      value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1990098651552003583, guid: dc3763e3754a64944852aa194dfdede1, type: 3}
+      propertyPath: phonePickupOffset.y
+      value: -0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1990098651552003583, guid: dc3763e3754a64944852aa194dfdede1, type: 3}
+      propertyPath: phonePickupOffset.z
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1990098651552003583, guid: dc3763e3754a64944852aa194dfdede1, type: 3}
+      propertyPath: phonePickupPosition.x
+      value: -0.00577
+      objectReference: {fileID: 0}
+    - target: {fileID: 1990098651552003583, guid: dc3763e3754a64944852aa194dfdede1, type: 3}
+      propertyPath: phonePickupPosition.y
+      value: 0.00126
+      objectReference: {fileID: 0}
+    - target: {fileID: 1990098651552003583, guid: dc3763e3754a64944852aa194dfdede1, type: 3}
+      propertyPath: phonePickupPosition.z
+      value: -0.00006
+      objectReference: {fileID: 0}
+    - target: {fileID: 1990098651552003583, guid: dc3763e3754a64944852aa194dfdede1, type: 3}
+      propertyPath: phonePickupRotation.x
+      value: 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 1990098651552003583, guid: dc3763e3754a64944852aa194dfdede1, type: 3}
+      propertyPath: phonePickupRotation.y
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 1990098651552003583, guid: dc3763e3754a64944852aa194dfdede1, type: 3}
+      propertyPath: phonePickupRotation.z
+      value: 15
+      objectReference: {fileID: 0}
     - target: {fileID: 3359662504558540889, guid: dc3763e3754a64944852aa194dfdede1, type: 3}
       propertyPath: m_Name
       value: Telephone-block
