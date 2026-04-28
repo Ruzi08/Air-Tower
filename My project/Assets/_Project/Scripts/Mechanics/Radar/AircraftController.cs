@@ -42,6 +42,8 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
     public System.Action<AircraftController, bool> OnDestinationReached;
 
     public bool IsPointerDown => isPointerDown;
+    public bool IsSelected => isSelected;
+    public float RemainingFlightTime => moveSpeed <= 0f ? float.PositiveInfinity : Mathf.Max(0f, 1f - progress) / moveSpeed;
     public float Speed
     {
         get => moveSpeed;
@@ -60,6 +62,7 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
     public Vector2 StartPositionWorld => NormToWorld(startPosNorm);
     public Vector2 EndPositionWorld => NormToWorld(endPosNorm);
     public Vector2 CurrentPosition => rectTransform.anchoredPosition;
+    public Vector2 VelocityWorld => moveSpeed * (EndPositionWorld - StartPositionWorld);
 
 
     private void Awake()
@@ -85,7 +88,7 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
         rectTransform.anchorMax = Vector2.zero;
         rectTransform.pivot = new Vector2(0.5f, 0.5f);
 
-        rectTransform.sizeDelta = new Vector2(20, 20);
+        rectTransform.sizeDelta = new Vector2(60, 60);
 
         if (aircraftImage != null)
         {

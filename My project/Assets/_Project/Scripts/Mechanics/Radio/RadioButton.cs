@@ -6,16 +6,21 @@ public class RadioButton : MonoBehaviour, Interactable
     [Header("Button Settings")]
     [SerializeField] private bool isUpButton = true;
     [SerializeField] private LetterSelector parentSelector;
+    [SerializeField] private float maxInteractDistance = 2.5f;
 
     [Header("Visual Feedback")]
     [SerializeField] private Material defaultMaterial;
     [SerializeField] private Material pressedMaterial;
     [SerializeField] private Material hoverMaterial;
-    [SerializeField] private float pressDepth = 0.01f;
+    [SerializeField] private float pressDepth = 0.0001f;
 
     [Header("Audio")]
     [SerializeField] private AudioClip clickSound;
     private AudioSource audioSource;
+
+    [Header("Distance Check")]
+    [SerializeField] private MonoBehaviour cameraController;
+    [SerializeField] private Transform distanceCheckTarget;
 
     private Renderer buttonRenderer;
     private Vector3 originalPosition;
@@ -35,6 +40,14 @@ public class RadioButton : MonoBehaviour, Interactable
         {
             PowerManager.Instance.OnPowerOut += OnPowerOut;
             PowerManager.Instance.OnPowerRestored += OnPowerRestored;
+        }
+    }
+
+    private void Update()
+    {
+        if (!isPressed && buttonRenderer != null && defaultMaterial != null && IsOutOfRange() && buttonRenderer.material == hoverMaterial)
+        {
+            buttonRenderer.material = defaultMaterial;
         }
     }
 
@@ -61,6 +74,11 @@ public class RadioButton : MonoBehaviour, Interactable
 
     public void Interact()
     {
+        if (IsOutOfRange())
+        {
+            return;
+        }
+
         // ✅ Анимация и звук ВСЕГДА работают
         StartCoroutine(PressAnimation());
 
@@ -89,12 +107,22 @@ public class RadioButton : MonoBehaviour, Interactable
         if (isPressed) yield break;
         isPressed = true;
 
-        if (buttonRenderer != null && pressedMaterial != null)
-        {
-            buttonRenderer.material = pressedMaterial;
-        }
+        //if (buttonRenderer != null && pressedMaterial != null)
+        //{
+        //    buttonRenderer.material = pressedMaterial;
+        //}
 
-        transform.localPosition = originalPosition + Vector3.down * pressDepth;
+        Vector3 startWorldPos = transform.position;
+
+        Vector3 pressDirection = -transform.forward;
+
+        Debug.Log($"Начальная позиция (world): {startWorldPos}");
+        Debug.Log($"Направление нажатия: {pressDirection}");
+
+        // Двигаем в world space
+        transform.position = startWorldPos + pressDirection * pressDepth;
+
+        Debug.Log($"Позиция при нажатии (world): {transform.position}");
 
         if (audioSource != null && clickSound != null)
         {
@@ -103,18 +131,18 @@ public class RadioButton : MonoBehaviour, Interactable
 
         yield return new WaitForSeconds(0.1f);
 
-        if (buttonRenderer != null && defaultMaterial != null)
-        {
-            buttonRenderer.material = defaultMaterial;
-        }
+        //if (buttonRenderer != null && defaultMaterial != null)
+        //{
+        //    buttonRenderer.material = defaultMaterial;
+        //}
 
-        transform.localPosition = originalPosition;
+        transform.position = startWorldPos;
         isPressed = false;
     }
 
     private void OnMouseEnter()
     {
-        if (!isPressed && buttonRenderer != null && hoverMaterial != null && hasPower)
+        if (!isPressed && !IsOutOfRange() && buttonRenderer != null && hoverMaterial != null && hasPower)
         {
             buttonRenderer.material = hoverMaterial;
         }
@@ -126,5 +154,36 @@ public class RadioButton : MonoBehaviour, Interactable
         {
             buttonRenderer.material = defaultMaterial;
         }
+    }
+
+    private bool IsOutOfRange()
+    {
+        Transform target = GetDistanceCheckTarget();
+        if (target == null)
+        {
+            return false;
+        }
+
+        return Vector3.Distance(target.position, transform.position) > maxInteractDistance;
+    }
+
+    private Transform GetDistanceCheckTarget()
+    {
+        if (distanceCheckTarget != null)
+        {
+            return distanceCheckTarget;
+        }
+
+        if (cameraController != null)
+        {
+            return cameraController.transform;
+        }
+
+        if (Camera.main != null)
+        {
+            return Camera.main.transform;
+        }
+
+        return null;
     }
 }
