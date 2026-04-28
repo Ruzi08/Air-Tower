@@ -152,21 +152,44 @@ public class SimpleCoffeeMaker : MonoBehaviour, Interactable
         }
     }
     
-    void StartBoiling()
+    // 🔥 ПУБЛИЧНЫЙ МЕТОД для запуска кипячения (можно вызывать из других скриптов)
+   public void StartBoiling()
+{
+    Debug.Log($"🔥 StartBoiling вызван! Текущее состояние: isBoiling={isBoiling}, isWaterHot={isWaterHot}, isCoffeeReady={isCoffeeReady}");
+    
+    if (isBoiling || isWaterHot || isCoffeeReady)
     {
-        isBoiling = true;
-        boilTimer = 0;
-        
-        if (steamParticles != null)
-            steamParticles.Play();
-        
-        SetBulbMaterial(bulbBoilingMaterial);
-        
-        if (boilSound != null)
-            boilSound.Play();
-        
-        Debug.Log("🫖 Чайник начал кипеть!");
+        Debug.Log("❌ Не могу запустить кипение - не подходящее состояние");
+        return;
     }
+    
+    isBoiling = true;
+    boilTimer = 0;
+    
+    if (steamParticles != null)
+    {
+        steamParticles.Play();
+        Debug.Log("✅ Steam particles запущены");
+    }
+    else
+    {
+        Debug.Log("❌ steamParticles = null");
+    }
+    
+    SetBulbMaterial(bulbBoilingMaterial);
+    
+    if (boilSound != null)
+    {
+        boilSound.Play();
+        Debug.Log("✅ Звук кипения запущен");
+    }
+    else
+    {
+        Debug.Log("❌ boilSound = null");
+    }
+    
+    Debug.Log("🫖 Чайник начал кипеть!");
+}
     
     IEnumerator PourCoffee()
     {

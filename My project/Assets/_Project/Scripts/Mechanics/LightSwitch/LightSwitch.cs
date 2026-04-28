@@ -103,19 +103,17 @@ public class LightSwitch : Sound, Interactable
     {
         hasPower = true;
         
-        // 🔥 Принудительно обновляем лампы
         UpdateLampsState();
         UpdateVisual();
         
         Debug.Log($"{name}: электричество вернулось, isOn={isOn}, лампы должны {(hasPower && isOn ? "гореть" : "не гореть")}");
         
-        // 🔥 Дополнительная проверка через корутину (на всякий случай)
         StartCoroutine(DelayedLampUpdate());
     }
     
     private IEnumerator DelayedLampUpdate()
     {
-        yield return null; // Ждём один кадр
+        yield return null;
         UpdateLampsState();
         Debug.Log($"{name}: повторное обновление ламп, shouldBeOn={hasPower && isOn}");
     }
@@ -147,7 +145,7 @@ public class LightSwitch : Sound, Interactable
         Debug.Log($"Выключатель {(isOn ? "включён" : "выключен")}, свет: {(hasPower && isOn ? "горит" : "не горит")}");
     }
     
-    private void UpdateLampsState()
+    public void UpdateLampsState()
     {
         bool shouldBeOn = hasPower && isOn;
         
@@ -169,7 +167,7 @@ public class LightSwitch : Sound, Interactable
         }
     }
     
-    private void UpdateVisual()
+    public void UpdateVisual()
     {
         if (switchOnVisual != null)
             switchOnVisual.SetActive(isOn);
@@ -192,6 +190,21 @@ public class LightSwitch : Sound, Interactable
         isAnimating = true;
         UpdateLampsState();
         UpdateVisual();
+    }
+    
+    // 🔥 НОВЫЙ МЕТОД для принудительного выключения с анимацией
+    public void SetOffState()
+    {
+        if (isAnimating) return;
+        
+        isOn = false;
+        targetRotation = originalRotation * Quaternion.Euler(pressedRotation);
+        isAnimating = true;
+        
+        UpdateVisual();
+        UpdateLampsState();
+        
+        Debug.Log($"{name}: принудительно выключен через SetOffState()");
     }
     
     public string GetDescription()

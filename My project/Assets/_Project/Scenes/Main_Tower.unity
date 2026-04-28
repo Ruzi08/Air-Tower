@@ -1473,8 +1473,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bb023429919abb4e84d2c466dafabae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraHeadBob
-  walkingBobbingSpeed: 14
-  bobbingAmount: 0.05
+  walkingBobbingSpeed: 12
+  bobbingAmount: 0.03
   runningBobbingSpeed: 18
   runningBobbingAmount: 0.08
   characterController: {fileID: 1723329498}
@@ -2526,6 +2526,14 @@ PrefabInstance:
     - target: {fileID: 5810272389817422097, guid: d6ecbc8fd7d1f944f9daf4d94e1fe1ce, type: 3}
       propertyPath: m_Layer
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 7103153012782714218, guid: d6ecbc8fd7d1f944f9daf4d94e1fe1ce, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 7103153012782714218, guid: d6ecbc8fd7d1f944f9daf4d94e1fe1ce, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7333631254909853010, guid: d6ecbc8fd7d1f944f9daf4d94e1fe1ce, type: 3}
       propertyPath: m_Layer
@@ -11203,6 +11211,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1283545547}
   - component: {fileID: 1283545546}
+  - component: {fileID: 1283545548}
+  - component: {fileID: 1283545549}
   m_Layer: 0
   m_Name: EventScheduler
   m_TagString: Untagged
@@ -11225,7 +11235,19 @@ MonoBehaviour:
   scheduledEvents:
   - eventName: "\u0423\u0434\u0430\u0440 \u043C\u043E\u043B\u043D\u0438\u0438 + \u043E\u0442\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435
       \u0441\u0432\u0435\u0442\u0430"
-    startTime: 10
+    triggerType: 0
+    startTime: 100
+    activationDelay: 0
+    targetObject: {fileID: 0}
+    lookAngle: 15
+    lookDuration: 1
+    checkObstacle: 1
+    obstacleLayer:
+      serializedVersion: 2
+      m_Bits: 4294967295
+    zoneCollider: {fileID: 0}
+    played: 0
+    isActive: 0
     onTrigger:
       m_PersistentCalls:
         m_Calls:
@@ -11253,10 +11275,20 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
+  - eventName: "\u0427\u0430\u0439\u043D\u0438\u043A"
+    triggerType: 1
+    startTime: 0
+    activationDelay: 10
+    targetObject: {fileID: 464117332}
+    lookAngle: 15
+    lookDuration: 1
+    checkObstacle: 1
+    obstacleLayer:
+      serializedVersion: 2
+      m_Bits: 64
+    zoneCollider: {fileID: 0}
     played: 0
-  - eventName: "\u0421\u0442\u0440\u0430\u0448\u043D\u0438\u0439 \u0437\u0432\u0443\u043A
-      \u0414\u0432\u0435\u0440\u0438 \u0411\u0423\u0423\u0423"
-    startTime: 10
+    isActive: 0
     onTrigger:
       m_PersistentCalls:
         m_Calls:
@@ -11272,7 +11304,36 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
+  - eventName: "\u0421\u0442\u0440\u0430\u0448\u043D\u0438\u0439 \u0437\u0432\u0443\u043A
+      \u0414\u0432\u0435\u0440\u0438 \u0411\u0423\u0423\u0423"
+    triggerType: 0
+    startTime: 100
+    activationDelay: 0
+    targetObject: {fileID: 0}
+    lookAngle: 15
+    lookDuration: 1
+    checkObstacle: 1
+    obstacleLayer:
+      serializedVersion: 2
+      m_Bits: 4294967295
+    zoneCollider: {fileID: 0}
     played: 0
+    isActive: 0
+    onTrigger:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 1211738426}
+          m_TargetAssemblyTypeName: Sound, Assembly-CSharp
+          m_MethodName: PlaySnd
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
   autoStart: 1
 --- !u!4 &1283545547
 Transform:
@@ -11286,9 +11347,44 @@ Transform:
   m_LocalPosition: {x: 5.54539, y: 4.56745, z: 61.26458}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1479400964}
+  - {fileID: 1523023959}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1283545548
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1283545545}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d156c67f3d29f545a41f14243ddce15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PowerOutOnKitchen
+  activationDelay: 5
+  kitchenZone: {fileID: 1479400965}
+  timeRequired: 5
+  dispatcherLightSwitch: {fileID: 1371246363}
+  switchSound: {fileID: 0}
+--- !u!114 &1283545549
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1283545545}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5a8897c4da4e6a4191c9947002e9c79, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KettleBoilEvent
+  activationDelay: 2
+  kitchenZone: {fileID: 1479400965}
+  corridorZone: {fileID: 1523023960}
+  coffeeMaker: {fileID: 781076026}
 --- !u!64 &1284094333
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -11628,6 +11724,17 @@ MonoBehaviour:
   brokenRotation: {x: 0, y: -22.205, z: 0}
   animationSpeed: 275
   sound: {fileID: 629181965}
+--- !u!114 &1371246363 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4003582044609929310, guid: 7a5a9ce3b91658341938b09b915d8e37, type: 3}
+  m_PrefabInstance: {fileID: 133369476429410911}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 84b4d9ec7c98b4545a6db225aeea4a94, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LightSwitch
 --- !u!64 &1405143358
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -11868,6 +11975,59 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 40d93021a4efade41a886c880239b2b8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LetterDisplay
+--- !u!1 &1479400963
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1479400964}
+  - component: {fileID: 1479400965}
+  m_Layer: 0
+  m_Name: ColiderKitchen
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1479400964
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1479400963}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -3.151, y: -0.422, z: -5.58}
+  m_LocalScale: {x: 4.3644896, y: 4.3602, z: 5.9973946}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1283545547}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &1479400965
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1479400963}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1485724720
 GameObject:
   m_ObjectHideFlags: 0
@@ -12037,6 +12197,59 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -5894421597310714776, guid: d6ecbc8fd7d1f944f9daf4d94e1fe1ce, type: 3}
+--- !u!1 &1523023958
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1523023959}
+  - component: {fileID: 1523023960}
+  m_Layer: 0
+  m_Name: "\u0421oliderCorridor"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1523023959
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1523023958}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: -9.38}
+  m_LocalScale: {x: 8.8401, y: 3.8991, z: 1.4753}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1283545547}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &1523023960
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1523023958}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1539196795
 GameObject:
   m_ObjectHideFlags: 0
@@ -12680,14 +12893,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1723329496}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0.008726558, w: 0.999962}
   m_LocalPosition: {x: 2.975, y: 3.94, z: 51.92}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 330585546}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 1}
 --- !u!114 &1723329500
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13453,7 +13666,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2653064858041252897, guid: 7a5a9ce3b91658341938b09b915d8e37, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 4.666
+      value: 4.6445
       objectReference: {fileID: 0}
     - target: {fileID: 2653064858041252897, guid: 7a5a9ce3b91658341938b09b915d8e37, type: 3}
       propertyPath: m_LocalPosition.y
@@ -14715,7 +14928,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2653064858041252897, guid: 7a5a9ce3b91658341938b09b915d8e37, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 6.0193763
+      value: 5.997
       objectReference: {fileID: 0}
     - target: {fileID: 2653064858041252897, guid: 7a5a9ce3b91658341938b09b915d8e37, type: 3}
       propertyPath: m_LocalPosition.y
@@ -14783,7 +14996,7 @@ PrefabInstance:
       objectReference: {fileID: 1988924691}
     - target: {fileID: 4991043649515138235, guid: 7a5a9ce3b91658341938b09b915d8e37, type: 3}
       propertyPath: m_Name
-      value: LighSwitch
+      value: LighSwitchDispetcher
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
