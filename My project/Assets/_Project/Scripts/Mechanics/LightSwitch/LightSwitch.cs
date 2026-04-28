@@ -10,7 +10,14 @@ public class LightSwitch : Sound, Interactable
     public GameObject switchOnVisual;
     public GameObject switchOffVisual;
     
+    [Header("Анимация поворота")]
+    public Vector3 pressedRotation = new Vector3(15f, 0, 0);
+    public float animationSpeed = 15f;
+    
     private bool hasPower = true;
+    private Quaternion originalRotation;
+    private Quaternion targetRotation;
+    private bool isAnimating = false;
     
     protected override void Start()
     {
@@ -22,6 +29,20 @@ public class LightSwitch : Sound, Interactable
         CurrentVolume = minVolume;
         TargetVolume = minVolume;
         
+        originalRotation = transform.localRotation;
+        
+        // Устанавливаем правильный поворот
+        if (isOn)
+        {
+            targetRotation = originalRotation;
+            transform.localRotation = originalRotation;
+        }
+        else
+        {
+            targetRotation = originalRotation * Quaternion.Euler(pressedRotation);
+            transform.localRotation = targetRotation;
+        }
+        
         SetLampsState(isOn);
         UpdateVisual();
         
@@ -29,6 +50,24 @@ public class LightSwitch : Sound, Interactable
         {
             PowerManager.Instance.OnPowerOut += HandlePowerOut;
             PowerManager.Instance.OnPowerRestored += HandlePowerRestored;
+        }
+    }
+    
+    void Update()
+    {
+        if (isAnimating)
+        {
+            transform.localRotation = Quaternion.RotateTowards(
+                transform.localRotation, 
+                targetRotation, 
+                animationSpeed * Time.deltaTime
+            );
+            
+            if (Quaternion.Angle(transform.localRotation, targetRotation) < 0.1f)
+            {
+                transform.localRotation = targetRotation;
+                isAnimating = false;
+            }
         }
     }
     
@@ -45,35 +84,44 @@ public class LightSwitch : Sound, Interactable
     {
         hasPower = false;
         
-        // ✅ Синхронизируем isOn с реальностью: лампы выключены, значит isOn = false
+        // Выключаем свет и поворачиваем в нажатое положение
         isOn = false;
-        
+        SetLampsState(false);
         UpdateVisual();
         
-        foreach (Lamp lamp in lamps)
-            if (lamp != null) lamp.TurnOff();
-        
-        Debug.Log($"Выключатель: электричество пропало, isOn сброшен на false");
+        targetRotation = originalRotation * Quaternion.Euler(pressedRotation);
+        isAnimating = true;
     }
     
     private void HandlePowerRestored()
     {
         hasPower = true;
         UpdateVisual();
-        
-        // ✅ НЕ включаем лампы автоматически, isOn остаётся false
-        Debug.Log($"Выключатель: электричество вернулось, isOn={isOn}, нужно нажать чтобы включить");
+        // Не включаем автоматически, просто даём возможность включить
     }
     
     public void Interact()
     {
         if (!hasPower)
         {
-            Debug.Log("Нет электричества! Выключатель не работает.");
+            Debug.Log("Нет электричества!");
             return;
         }
         
+        if (isAnimating) return;
+        
         isOn = !isOn;
+        
+        if (isOn)
+        {
+            targetRotation = originalRotation;
+        }
+        else
+        {
+            targetRotation = originalRotation * Quaternion.Euler(pressedRotation);
+        }
+        isAnimating = true;
+        
         SetLampsState(isOn);
         UpdateVisual();
         
@@ -81,8 +129,6 @@ public class LightSwitch : Sound, Interactable
         {
             PlaySnd(sounds[0], volume: maxVolume, p1: minPitch, p2: maxPitch);
         }
-        
-        Debug.Log($"Свет {(isOn ? "включён" : "выключен")}");
     }
     
     private void SetLampsState(bool state)
