@@ -1,6 +1,7 @@
 using NUnit.Framework.Interfaces;
 using System.Collections.Generic;
 using System.ComponentModel;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
@@ -42,7 +43,7 @@ public class RadarManager : MonoBehaviour
     [SerializeField] private Color criticalCollisionTrajectoryColor = Color.red;
 
     [Header("UI - Selection Display")]
-    [SerializeField] private Text infoText;
+    [SerializeField] private TextMeshPro infoText;
     [SerializeField] private GameObject trajectoryLinePrefab;
     [SerializeField] private float trajectoryLineWidth = 2f;
     [SerializeField] private Color trajectoryLineColor = Color.green;
@@ -60,6 +61,14 @@ public class RadarManager : MonoBehaviour
     [SerializeField] private Color targetZoneColor = new Color(0f, 1f, 0f, 0.4f);
     [SerializeField] private float targetZoneWidth = 0.12f;
     [SerializeField] private float edgeDetectionEpsilon = 0.001f;
+
+    [Header("Progression")]
+    [SerializeField] private int initialMaxAircrafts = 1;
+    [SerializeField] private int advancedMaxAircrafts = 3;
+    [SerializeField] private int successfulArrivalsToAdvance = 3;
+
+    private int successfulArrivalsCount = 0;
+    private bool isAdvancedMode = false;
 
     private Image targetZoneImage;
     private RectTransform targetZoneRect;
@@ -117,6 +126,10 @@ public class RadarManager : MonoBehaviour
 
         CreateEditLine();
         CreateZones();
+
+        maxAircrafts = initialMaxAircrafts;
+        successfulArrivalsCount = 0;
+        isAdvancedMode = false;
 
         if (aircraftContainer == null)
         {
@@ -562,6 +575,19 @@ public class RadarManager : MonoBehaviour
 
         if (hitTarget)
         {
+            successfulArrivalsCount++;
+
+            // Проверяем, не пора ли перейти на следующий уровень
+            if (!isAdvancedMode && successfulArrivalsCount >= successfulArrivalsToAdvance)
+            {
+                isAdvancedMode = true;
+                maxAircrafts = advancedMaxAircrafts;
+
+                if (infoText != null)
+                {
+                    infoText.text = $"УРОВЕНЬ ПОВЫШЕН!\nСамолётов: {maxAircrafts}";
+                }
+            }
         }
         else
         {
@@ -1096,5 +1122,12 @@ public class RadarManager : MonoBehaviour
         img.color = color;
         img.raycastTarget = false;
         img.gameObject.SetActive(false);
+    }
+
+    public void ResetProgression()
+    {
+        successfulArrivalsCount = 0;
+        isAdvancedMode = false;
+        maxAircrafts = initialMaxAircrafts;
     }
 }
