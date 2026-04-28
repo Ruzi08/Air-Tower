@@ -7,6 +7,14 @@ using UnityEngine.UI;
 
 public class RadarManager : MonoBehaviour
 {
+    private enum RadarEdgeSide
+    {
+        Left = 0,
+        Right = 1,
+        Bottom = 2,
+        Top = 3
+    }
+
     private class AircraftTrajectoryVisual
     {
         public Image Image;
@@ -51,6 +59,7 @@ public class RadarManager : MonoBehaviour
     [Header("Target Zone (РєСѓРґР° РќРђР”Рћ)")]
     [SerializeField] private Color targetZoneColor = new Color(0f, 1f, 0f, 0.4f);
     [SerializeField] private float targetZoneWidth = 0.12f;
+    [SerializeField] private float edgeDetectionEpsilon = 0.001f;
 
     private Image targetZoneImage;
     private RectTransform targetZoneRect;
@@ -166,19 +175,16 @@ public class RadarManager : MonoBehaviour
     {
         if (!isInitialized)
         {
-            Debug.LogError("RadarManager РЅРµ РёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅ!");
             return;
         }
 
         if (aircraftPrefab == null)
         {
-            Debug.LogError("РќРµРІРѕР·РјРѕР¶РЅРѕ СЃРѕР·РґР°С‚СЊ СЃР°РјРѕР»РµС‚: РїСЂРµС„Р°Р± РЅРµ РЅР°Р·РЅР°С‡РµРЅ");
             return;
         }
 
         if (aircraftContainer == null)
         {
-            Debug.LogError("РќРµРІРѕР·РјРѕР¶РЅРѕ СЃРѕР·РґР°С‚СЊ СЃР°РјРѕР»РµС‚: РєРѕРЅС‚РµР№РЅРµСЂ РЅРµ СЃРѕР·РґР°РЅ. РџС‹С‚Р°СЋСЃСЊ СЃРѕР·РґР°С‚СЊ...");
             InitializeContainer();
             if (aircraftContainer == null) return;
         }
@@ -188,7 +194,6 @@ public class RadarManager : MonoBehaviour
         RectTransform rect = go.GetComponent<RectTransform>();
         if (rect == null)
         {
-            Debug.LogError("РЎРѕР·РґР°РЅРЅС‹Р№ РѕР±СЉРµРєС‚ РЅРµ РёРјРµРµС‚ RectTransform! Р­С‚Рѕ РЅРµ UI СЌР»РµРјРµРЅС‚!");
             Destroy(go);
             return;
         }
@@ -196,7 +201,6 @@ public class RadarManager : MonoBehaviour
         AircraftController ac = go.GetComponent<AircraftController>();
         if (ac == null)
         {
-            Debug.LogError("РџСЂРµС„Р°Р± СЃР°РјРѕР»РµС‚Р° РЅРµ СЃРѕРґРµСЂР¶РёС‚ РєРѕРјРїРѕРЅРµРЅС‚ AircraftController!");
             Destroy(go);
             return;
         }
@@ -205,10 +209,10 @@ public class RadarManager : MonoBehaviour
         Vector2 start = GetEdgePointOnSide(startSide, spawnInset);
 
         Vector2 targetZone = GetRandomEdgePoint();
-        while (GetEdgeSide(targetZone) == startSide) targetZone = GetRandomEdgePoint();
+        while ((int)GetEdgeSide(targetZone) == startSide) targetZone = GetRandomEdgePoint();
 
         Vector2 end = GetRandomEdgePoint();
-        while (GetEdgeSide(end) == startSide) end = GetRandomEdgePoint();
+        while ((int)GetEdgeSide(end) == startSide) end = GetRandomEdgePoint();
 
         while (Vector2.Distance(start, end) < 0.3f)
         {
@@ -297,7 +301,6 @@ public class RadarManager : MonoBehaviour
     {
         if (string.IsNullOrEmpty(id))
         {
-            Debug.LogWarning("SelectAircraftByID: РїРµСЂРµРґР°РЅ РїСѓСЃС‚РѕР№ ID");
             return;
         }
 
@@ -310,7 +313,6 @@ public class RadarManager : MonoBehaviour
             }
         }
 
-        Debug.LogWarning($"SelectAircraftByID: СЃР°РјРѕР»РµС‚ СЃ ID {id} РЅРµ РЅР°Р№РґРµРЅ");
     }
 
     private void HandleAircraftSelected(AircraftController ac)
@@ -327,7 +329,7 @@ public class RadarManager : MonoBehaviour
         }
 
         selectedAircraft = ac;
-        ShowZone(targetZoneImage, targetZoneRect, ac.TargetZoneNorm, targetZoneWidth, targetZoneColor);
+        ShowZoneFixed(targetZoneImage, targetZoneRect, ac.TargetZoneNorm, targetZoneWidth, targetZoneColor);
 
         if (infoText != null)
         {
@@ -346,7 +348,7 @@ public class RadarManager : MonoBehaviour
             HideAllZones();
 
             if (infoText != null)
-                infoText.text = "Р’С‹Р±РµСЂРёС‚Рµ СЃР°РјРѕР»РµС‚";
+                infoText.text = "Choose an aircraft";
 
         }
 
@@ -560,11 +562,9 @@ public class RadarManager : MonoBehaviour
 
         if (hitTarget)
         {
-            Debug.Log($"РЎРђРњРћР›РЃРў {ac.AircraftID} РЈРЎРџР•РЁРќРћ РџР РР‘Р«Р› Р’ Р¦Р•Р›Р•Р’РЈР® Р—РћРќРЈ!");
         }
         else
         {
-            Debug.Log($"РЎРђРњРћР›РЃРў {ac.AircraftID} РџР РћРњРђРҐРќРЈР›РЎРЇ! Р¦РµР»СЊ: {ac.TargetZoneNorm}, РџСЂРёР±С‹Р»: {ac.EndPosNorm}");
         }
     }
 
@@ -596,7 +596,7 @@ public class RadarManager : MonoBehaviour
             HideAllZones();
 
             if (infoText != null)
-                infoText.text = "Р’С‹Р±РµСЂРёС‚Рµ СЃР°РјРѕР»РµС‚";
+                infoText.text = "Select aircraft";
         }
 
         RemoveTrajectoryLine(ac);
@@ -804,7 +804,6 @@ public class RadarManager : MonoBehaviour
         Vector2 edgePoint = GetEdgePoint(start, currentDir);
         UpdateEditLine(start, edgePoint);
 
-        Debug.Log($"РќР°С‡Р°Р»СЊРЅС‹Р№ СѓРіРѕР»: {currentEditAngle:F1}В°");
     }
 
     public void ApplyPendingTrajectory(string aircraftID)
@@ -820,7 +819,6 @@ public class RadarManager : MonoBehaviour
                 editTrajectoryLineImage.gameObject.SetActive(false);
                 pendingTrajectory = null;
                 pendingAircraftID = null;
-                Debug.Log($"РўСЂР°РµРєС‚РѕСЂРёСЏ РїСЂРёРјРµРЅРµРЅР° РґР»СЏ {aircraftID}");
             }
         }
     }
@@ -846,35 +844,55 @@ public class RadarManager : MonoBehaviour
         Vector2 size = radarArea.rect.size;
         Vector2 center;
         Vector2 zoneSize;
+        bool horizontal;
+        bool invertGradient;
+        float rotation = 0f;
 
-        if (Mathf.Approximately(normPos.x, 0f))
+        if (Mathf.Approximately(normPos.x, 0f)) // Левая граница
         {
-            center = new Vector2(0, normPos.y * size.y);
-            zoneSize = new Vector2(width * size.x, size.y * 0.15f);
-            zoneRect.pivot = new Vector2(0, 0.5f);
+            center = new Vector2(0f, normPos.y * size.y);
+            zoneSize = new Vector2(width * size.x, size.y * 0.3f);
+            zoneRect.pivot = new Vector2(0f, 0.5f);
+            horizontal = true;
+            invertGradient = false;
         }
-        else if (Mathf.Approximately(normPos.x, 1f))
+        else if (Mathf.Approximately(normPos.x, 1f)) // Правая граница
         {
             center = new Vector2(size.x, normPos.y * size.y);
-            zoneSize = new Vector2(width * size.x, size.y * 0.15f);
-            zoneRect.pivot = new Vector2(1, 0.5f);
+            zoneSize = new Vector2(width * size.x, size.y * 0.3f);
+            zoneRect.pivot = new Vector2(1f, 0.5f);
+            horizontal = true;
+            rotation = 180f; // Разворачиваем градиент
         }
-        else if (Mathf.Approximately(normPos.y, 0f))
+        else if (Mathf.Approximately(normPos.y, 0f)) // Нижняя граница
         {
             center = new Vector2(normPos.x * size.x, 0);
-            zoneSize = new Vector2(size.x * 0.15f, width * size.y);
+            zoneSize = new Vector2(size.x * 0.3f, width * size.y);
             zoneRect.pivot = new Vector2(0.5f, 0);
+            horizontal = false;
+            rotation = 0f;
         }
-        else
+        else // Верхняя граница
         {
             center = new Vector2(normPos.x * size.x, size.y);
-            zoneSize = new Vector2(size.x * 0.15f, width * size.y);
+            zoneSize = new Vector2(size.x * 0.3f, width * size.y);
             zoneRect.pivot = new Vector2(0.5f, 1);
+            horizontal = false;
+            rotation = 180f; // Разворачиваем градиент
         }
 
         zoneRect.anchoredPosition = center;
         zoneRect.sizeDelta = zoneSize;
+
+        // Обновляем спрайт с правильным направлением градиента
+        int textureSize = 128;
+        Sprite gradientSprite = CreateGradientSprite(textureSize, 8, horizontal);
+        zoneImage.sprite = gradientSprite;
         zoneImage.color = color;
+
+        // Поворачиваем для нужного направления
+        zoneRect.localRotation = Quaternion.Euler(0, 0, rotation);
+
         zoneImage.gameObject.SetActive(true);
     }
 
@@ -887,13 +905,94 @@ public class RadarManager : MonoBehaviour
         return "РќР•РР—Р’Р•РЎРўРќРћ";
     }
 
+    private void ShowZoneFixed(Image zoneImage, RectTransform zoneRect, Vector2 normPos, float width, Color color)
+    {
+        if (zoneImage == null || zoneRect == null || radarArea == null) return;
+
+        Vector2 size = radarArea.rect.size;
+        Vector2 center;
+        Vector2 zoneSize;
+        bool horizontal;
+        bool invertGradient;
+
+        switch (GetEdgeSide(normPos))
+        {
+            case RadarEdgeSide.Left:
+                center = new Vector2(0f, normPos.y * size.y);
+                zoneSize = new Vector2(width * size.x, size.y * 0.3f);
+                zoneRect.pivot = new Vector2(0f, 0.5f);
+                horizontal = true;
+                invertGradient = false;
+                break;
+            case RadarEdgeSide.Right:
+                center = new Vector2(size.x, normPos.y * size.y);
+                zoneSize = new Vector2(width * size.x, size.y * 0.3f);
+                zoneRect.pivot = new Vector2(1f, 0.5f);
+                horizontal = true;
+                invertGradient = true;
+                break;
+            case RadarEdgeSide.Bottom:
+                center = new Vector2(normPos.x * size.x, 0f);
+                zoneSize = new Vector2(size.x * 0.3f, width * size.y);
+                zoneRect.pivot = new Vector2(0.5f, 0f);
+                horizontal = false;
+                invertGradient = false;
+                break;
+            default:
+                center = new Vector2(normPos.x * size.x, size.y);
+                zoneSize = new Vector2(size.x * 0.3f, width * size.y);
+                zoneRect.pivot = new Vector2(0.5f, 1f);
+                horizontal = false;
+                invertGradient = true;
+                break;
+        }
+
+        zoneRect.anchoredPosition = center;
+        zoneRect.sizeDelta = zoneSize;
+        zoneRect.localRotation = Quaternion.identity;
+
+        int textureSize = 128;
+        zoneImage.sprite = CreateGradientSpriteFixed(textureSize, 8, horizontal, invertGradient);
+        zoneImage.color = color;
+        zoneImage.gameObject.SetActive(true);
+    }
+
+    private Sprite CreateGradientSpriteFixed(int width, int height, bool horizontal, bool invert)
+    {
+        Texture2D texture = new Texture2D(width, height);
+        Color[] colors = new Color[width * height];
+
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                float t = horizontal ? (float)x / width : (float)y / height;
+                if (invert)
+                {
+                    t = 1f - t;
+                }
+
+                float alpha = Mathf.Pow(1f - t, 2f);
+                colors[y * width + x] = new Color(1f, 1f, 1f, alpha);
+            }
+        }
+
+        texture.SetPixels(colors);
+        texture.Apply();
+        texture.wrapMode = TextureWrapMode.Clamp;
+
+        return Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0f, 0.5f));
+    }
+
     private void CreateZones()
     {
+        // Целевая зона (зелёная) - куда НАДО
         GameObject targetObj = new GameObject("TargetZone", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
         targetObj.transform.SetParent(radarArea, false);
         targetZoneImage = targetObj.GetComponent<Image>();
         targetZoneRect = targetObj.GetComponent<RectTransform>();
-        SetupZone(targetZoneImage, targetZoneRect, targetZoneColor);
+        SetupZone(targetZoneImage, targetZoneRect, targetZoneColor, targetZoneWidth, true);
+
     }
 
     private void SetupZone(Image img, RectTransform rect, Color color)
@@ -915,11 +1014,87 @@ public class RadarManager : MonoBehaviour
         if (targetZoneImage != null) targetZoneImage.gameObject.SetActive(false);
     }
 
-    private int GetEdgeSide(Vector2 normPoint)
+    private RadarEdgeSide GetEdgeSide(Vector2 normPoint)
     {
-        if (Mathf.Approximately(normPoint.x, 0f)) return 0;
-        if (Mathf.Approximately(normPoint.x, 1f)) return 1;
-        if (Mathf.Approximately(normPoint.y, 0f)) return 2;
-        return 3;
+        float leftDistance = Mathf.Abs(normPoint.x);
+        float rightDistance = Mathf.Abs(1f - normPoint.x);
+        float bottomDistance = Mathf.Abs(normPoint.y);
+        float topDistance = Mathf.Abs(1f - normPoint.y);
+
+        float minDistance = leftDistance;
+        RadarEdgeSide closestSide = RadarEdgeSide.Left;
+
+        if (rightDistance < minDistance)
+        {
+            minDistance = rightDistance;
+            closestSide = RadarEdgeSide.Right;
+        }
+
+        if (bottomDistance < minDistance)
+        {
+            minDistance = bottomDistance;
+            closestSide = RadarEdgeSide.Bottom;
+        }
+
+        if (topDistance < minDistance)
+        {
+            minDistance = topDistance;
+            closestSide = RadarEdgeSide.Top;
+        }
+
+        return minDistance <= edgeDetectionEpsilon ? closestSide : closestSide;
+    }
+
+    private Sprite CreateGradientSprite(int width, int height, bool horizontal, bool invert = false)
+    {
+        Texture2D texture = new Texture2D(width, height);
+        Color[] colors = new Color[width * height];
+
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                float t;
+                if (horizontal)
+                {
+                    // Горизонтальный градиент (от левого края к центру)
+                    t = (float)x / width;
+                }
+                else
+                {
+                    // Вертикальный градиент (от верхнего/нижнего края к центру)
+                    t = (float)y / height;
+                }
+
+                // Градиент: яркий у края, прозрачный внутри
+                float alpha = 1f - t; // Затухание
+                alpha = Mathf.Pow(alpha, 2f); // Квадратичное затухание для более резкого перехода
+
+                colors[y * width + x] = new Color(1f, 1f, 1f, alpha);
+            }
+        }
+
+        texture.SetPixels(colors);
+        texture.Apply();
+        texture.wrapMode = TextureWrapMode.Clamp;
+
+        return Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0, 0.5f));
+    }
+
+    private void SetupZone(Image img, RectTransform rect, Color color, float width, bool isTargetZone)
+    {
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.zero;
+
+        // Размер текстуры для градиента
+        int textureSize = 128;
+
+        // Создаём градиентный спрайт (горизонтальный по умолчанию)
+        Sprite gradientSprite = CreateGradientSprite(textureSize, 8, true);
+        img.sprite = gradientSprite;
+        img.type = Image.Type.Simple;
+        img.color = color;
+        img.raycastTarget = false;
+        img.gameObject.SetActive(false);
     }
 }
