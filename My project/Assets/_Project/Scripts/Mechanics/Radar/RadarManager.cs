@@ -1097,4 +1097,14 @@ public class RadarManager : MonoBehaviour
         img.raycastTarget = false;
         img.gameObject.SetActive(false);
     }
+
+    public bool HasCollisionWarning()
+    {
+        return collisionWarningAircrafts.Count > 0;
+    }
+
+    public bool HasCriticalCollision()
+    {
+        return criticalCollisionAircrafts.Count > 0;
+    }
 }
