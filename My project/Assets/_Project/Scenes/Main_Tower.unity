@@ -4498,7 +4498,7 @@ MonoBehaviour:
   switchOnVisual: {fileID: 0}
   switchOffVisual: {fileID: 0}
   pressedRotation: {x: 15, y: 0, z: 0}
-  animationSpeed: 30
+  animationSpeed: 100
 --- !u!64 &724584552
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -12331,6 +12331,9 @@ MonoBehaviour:
   interactableLayer:
     serializedVersion: 2
     m_Bits: 8
+  obstacleLayer:
+    serializedVersion: 2
+    m_Bits: 0
 --- !u!81 &1723329501
 AudioListener:
   m_ObjectHideFlags: 0
@@ -13183,7 +13186,7 @@ MonoBehaviour:
   switchOnVisual: {fileID: 0}
   switchOffVisual: {fileID: 0}
   pressedRotation: {x: 15, y: 0, z: 0}
-  animationSpeed: 30
+  animationSpeed: 100
 --- !u!1 &1976863097
 GameObject:
   m_ObjectHideFlags: 0
@@ -14409,7 +14412,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4003582044609929310, guid: 7a5a9ce3b91658341938b09b915d8e37, type: 3}
       propertyPath: animationSpeed
-      value: 30
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 4003582044609929310, guid: 7a5a9ce3b91658341938b09b915d8e37, type: 3}
       propertyPath: pressedRotation.x

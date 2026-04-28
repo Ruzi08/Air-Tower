@@ -5,6 +5,7 @@ public class PlayerInteractor : MonoBehaviour
     [Header("Настройки взаимодействия")]
     public float interactionDistance = 3f;
     public LayerMask interactableLayer;
+    public LayerMask obstacleLayer; // 🔥 Добавь слой для стен и препятствий
     
     private Camera playerCamera;
     private CrosshairController crosshair;
@@ -21,7 +22,6 @@ public class PlayerInteractor : MonoBehaviour
     
     void Update()
     {
-        // Если диалог активен — не взаимодействуем
         if (DialogueManager.Instance != null && DialogueManager.Instance.IsDialogueActive)
         {
             if (crosshair != null)
@@ -51,6 +51,15 @@ public class PlayerInteractor : MonoBehaviour
             
             if (interactable != null)
             {
+                // 🔥 Проверяем, есть ли препятствие между камерой и объектом
+                if (IsObstacleBetween(playerCamera.transform.position, hit.point))
+                {
+                    if (crosshair != null)
+                        crosshair.SetCrosshairNormal();
+                    currentInteractable = null;
+                    return;
+                }
+                
                 if (crosshair != null)
                     crosshair.SetCrosshairHighlight();
                     
@@ -69,7 +78,6 @@ public class PlayerInteractor : MonoBehaviour
     {
         if (playerCamera == null) return;
         
-        // ✅ РЕЙКАСТ ИЗ ПОЗИЦИИ МЫШИ (а не из центра камеры)
         Ray ray = playerCamera.ScreenPointToRay(Input.mousePosition);
         
         Debug.DrawRay(ray.origin, ray.direction * interactionDistance, Color.red, 2f);
@@ -77,6 +85,13 @@ public class PlayerInteractor : MonoBehaviour
         RaycastHit hit;
         if (Physics.Raycast(ray, out hit, interactionDistance, interactableLayer))
         {
+            // 🔥 Проверяем, есть ли препятствие между камерой и объектом
+            if (IsObstacleBetween(ray.origin, hit.point))
+            {
+                Debug.Log($"🚫 Не могу взаимодействовать: препятствие на пути к {hit.collider.gameObject.name}");
+                return;
+            }
+            
             Debug.Log($"🎯 Попал в: {hit.collider.gameObject.name}");
             
             Interactable interactable = hit.collider.GetComponent<Interactable>();
@@ -95,5 +110,28 @@ public class PlayerInteractor : MonoBehaviour
         {
             Debug.Log("❌ Луч никуда не попал");
         }
+    }
+    
+    // 🔥 Метод проверки препятствий
+    private bool IsObstacleBetween(Vector3 start, Vector3 end)
+    {
+        Vector3 direction = end - start;
+        float distance = direction.magnitude;
+        
+        // Если obstacleLayer не задан, используем всё кроме interactableLayer
+        LayerMask mask = obstacleLayer.value != 0 ? obstacleLayer : ~interactableLayer;
+        
+        RaycastHit obstacleHit;
+        if (Physics.Raycast(start, direction, out obstacleHit, distance, mask))
+        {
+            // Если препятствие не является интерактивным объектом
+            if (obstacleHit.collider.GetComponent<Interactable>() == null)
+            {
+                Debug.Log($"🚫 Препятствие: {obstacleHit.collider.name}");
+                return true;
+            }
+        }
+        
+        return false;
     }
 }
