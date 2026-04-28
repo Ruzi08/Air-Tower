@@ -7,6 +7,12 @@ using UnityEngine.UI;
 
 public class RadarManager : MonoBehaviour
 {
+    private class AircraftTrajectoryVisual
+    {
+        public Image Image;
+        public RectTransform Rect;
+    }
+
     [Header("Radar Settings")]
     [SerializeField] private RectTransform radarArea;
     [SerializeField] private GameObject aircraftPrefab;
@@ -20,6 +26,11 @@ public class RadarManager : MonoBehaviour
 
     [Header("Collision")]
     [SerializeField] private float collisionRadius = 0.04f;
+    [SerializeField] private bool predictCollisionForWholeRoute = true;
+    [SerializeField] private float collisionPredictionTime = 5f;
+    [SerializeField] private Color collisionWarningTrajectoryColor = new Color(1f, 0.6f, 0f, 1f);
+    [SerializeField] private float criticalCollisionTime = 1.5f;
+    [SerializeField] private Color criticalCollisionTrajectoryColor = Color.red;
 
     [Header("UI - Selection Display")]
     [SerializeField] private Text infoText;
@@ -33,18 +44,17 @@ public class RadarManager : MonoBehaviour
     [SerializeField] private float rotationSpeed = 30f;
 
     [Header("Destination Zone")]
-    [SerializeField] private Color destinationZoneColor = new Color(1f, 0.5f, 0f, 0.5f); // Оранжевый полупрозрачный
+    [SerializeField] private Color destinationZoneColor = new Color(1f, 0.5f, 0f, 0.5f);
     [SerializeField] private float destinationZoneWidth = 0.15f;
 
-    [Header("Target Zone (куда НАДО)")]
-    [SerializeField] private Color targetZoneColor = new Color(0f, 1f, 0f, 0.4f); // Зелёный
+    [Header("Target Zone (РєСѓРґР° РќРђР”Рћ)")]
+    [SerializeField] private Color targetZoneColor = new Color(0f, 1f, 0f, 0.4f);
     [SerializeField] private float targetZoneWidth = 0.12f;
 
     private Image targetZoneImage;
     private RectTransform targetZoneRect;
 
     private float currentEditAngle = 0f;
-
     private float lastMouseX;
     private bool isDraggingTrajectory = false;
 
@@ -52,15 +62,14 @@ public class RadarManager : MonoBehaviour
     private RectTransform editTrajectoryLineRect;
     private bool isEditingMode = false;
     private bool isPendingTrajectoryVisible = false;
-    private Vector2? pendingTrajectory = null; // Ожидающая траектория для текущего самолета
+    private Vector2? pendingTrajectory = null;
     private string pendingAircraftID = null;
 
-    // Внутренние данные
-    private List<AircraftController> activeAircrafts = new List<AircraftController>();
+    private readonly List<AircraftController> activeAircrafts = new List<AircraftController>();
+    private readonly Dictionary<AircraftController, AircraftTrajectoryVisual> aircraftTrajectoryLines = new Dictionary<AircraftController, AircraftTrajectoryVisual>();
+    private readonly HashSet<AircraftController> collisionWarningAircrafts = new HashSet<AircraftController>();
+    private readonly HashSet<AircraftController> criticalCollisionAircrafts = new HashSet<AircraftController>();
     private AircraftController selectedAircraft;
-    private Image trajectoryLineImage;
-    private RectTransform trajectoryLineRect;
-    private Vector2 direction;
     private float spawnTimer;
     private bool isInitialized = false;
 
@@ -69,69 +78,36 @@ public class RadarManager : MonoBehaviour
 
     private void Awake()
     {
-        // Инициализируем контейнер ДО всего остального
         InitializeContainer();
     }
 
     private void Start()
     {
-
         if (radarArea == null)
         {
-            Debug.LogError("RadarManager: Radar Area не назначен!");
+            Debug.LogError("RadarManager: Radar Area РЅРµ РЅР°Р·РЅР°С‡РµРЅ!");
             enabled = false;
             return;
         }
 
         if (aircraftPrefab == null)
         {
-            Debug.LogError("RadarManager: Aircraft Prefab не назначен!");
+            Debug.LogError("RadarManager: Aircraft Prefab РЅРµ РЅР°Р·РЅР°С‡РµРЅ!");
             enabled = false;
             return;
         }
 
-        // Проверяем, что префаб содержит RectTransform (UI элемент)
         RectTransform prefabRect = aircraftPrefab.GetComponent<RectTransform>();
         if (prefabRect == null)
         {
-            Debug.LogError("Префаб самолета НЕ является UI элементом! Нет RectTransform. Пересоздайте префаб как UI → Image.");
+            Debug.LogError("РџСЂРµС„Р°Р± СЃР°РјРѕР»РµС‚Р° РќР• СЏРІР»СЏРµС‚СЃСЏ UI СЌР»РµРјРµРЅС‚РѕРј! РќРµС‚ RectTransform. РџРµСЂРµСЃРѕР·РґР°Р№С‚Рµ РїСЂРµС„Р°Р± РєР°Рє UI в†’ Image.");
             enabled = false;
             return;
         }
 
-        // Создаем линию траектории
-        if (trajectoryLinePrefab != null)
-        {
-            GameObject lineObj = Instantiate(trajectoryLinePrefab, radarArea);
-
-            trajectoryLineImage = lineObj.GetComponent<Image>();
-            trajectoryLineRect = lineObj.GetComponent<RectTransform>();
-
-            trajectoryLineImage.type = Image.Type.Tiled;
-            trajectoryLineImage.sprite = CreateDashedSprite();
-            trajectoryLineImage.pixelsPerUnitMultiplier = 100f;
-
-            // ВАЖНО: Сбрасываем всё на нули
-            trajectoryLineRect.anchorMin = Vector2.zero;
-            trajectoryLineRect.anchorMax = Vector2.zero;
-            trajectoryLineRect.pivot = new Vector2(0, 0.5f);
-            trajectoryLineRect.anchoredPosition = Vector2.zero;
-            trajectoryLineRect.localPosition = Vector3.zero;
-            trajectoryLineRect.localScale = Vector3.one;
-
-            trajectoryLineImage.color = Color.green;
-            trajectoryLineImage.raycastTarget = true;
-
-            TrajectoryLineClickHandler clickHandler = lineObj.AddComponent<TrajectoryLineClickHandler>();
-            clickHandler.Initialize(this);
-
-            trajectoryLineImage.gameObject.SetActive(false);
-
-            
-        }
         CreateEditLine();
         CreateZones();
-        // Убеждаемся, что контейнер существует
+
         if (aircraftContainer == null)
         {
             InitializeContainer();
@@ -146,7 +122,7 @@ public class RadarManager : MonoBehaviour
 
         if (radarArea == null)
         {
-            Debug.LogError("Не могу создать контейнер: radarArea не назначен");
+            Debug.LogError("РќРµ РјРѕРіСѓ СЃРѕР·РґР°С‚СЊ РєРѕРЅС‚РµР№РЅРµСЂ: radarArea РЅРµ РЅР°Р·РЅР°С‡РµРЅ");
             return;
         }
 
@@ -154,7 +130,6 @@ public class RadarManager : MonoBehaviour
         go.transform.SetParent(radarArea, false);
         aircraftContainer = go.transform;
 
-        // Настраиваем RectTransform
         RectTransform containerRect = go.GetComponent<RectTransform>();
         containerRect.anchorMin = Vector2.zero;
         containerRect.anchorMax = Vector2.one;
@@ -186,52 +161,41 @@ public class RadarManager : MonoBehaviour
         }
     }
 
-
-
-
     private void SpawnAircraft()
     {
-
-        // ПРОВЕРЯЕМ ВСЕ УСЛОВИЯ
         if (!isInitialized)
         {
-            Debug.LogError("RadarManager не инициализирован!");
+            Debug.LogError("RadarManager РЅРµ РёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅ!");
             return;
         }
 
         if (aircraftPrefab == null)
         {
-            Debug.LogError("Невозможно создать самолет: префаб не назначен");
+            Debug.LogError("РќРµРІРѕР·РјРѕР¶РЅРѕ СЃРѕР·РґР°С‚СЊ СЃР°РјРѕР»РµС‚: РїСЂРµС„Р°Р± РЅРµ РЅР°Р·РЅР°С‡РµРЅ");
             return;
         }
 
         if (aircraftContainer == null)
         {
-            Debug.LogError("Невозможно создать самолет: контейнер не создан. Пытаюсь создать...");
+            Debug.LogError("РќРµРІРѕР·РјРѕР¶РЅРѕ СЃРѕР·РґР°С‚СЊ СЃР°РјРѕР»РµС‚: РєРѕРЅС‚РµР№РЅРµСЂ РЅРµ СЃРѕР·РґР°РЅ. РџС‹С‚Р°СЋСЃСЊ СЃРѕР·РґР°С‚СЊ...");
             InitializeContainer();
             if (aircraftContainer == null) return;
         }
 
-        
-
-       
-        // СОЗДАЕМ САМОЛЕТ
         GameObject go = Instantiate(aircraftPrefab, aircraftContainer);
 
-        // Проверяем RectTransform
         RectTransform rect = go.GetComponent<RectTransform>();
         if (rect == null)
         {
-            Debug.LogError("Созданный объект не имеет RectTransform! Это не UI элемент!");
+            Debug.LogError("РЎРѕР·РґР°РЅРЅС‹Р№ РѕР±СЉРµРєС‚ РЅРµ РёРјРµРµС‚ RectTransform! Р­С‚Рѕ РЅРµ UI СЌР»РµРјРµРЅС‚!");
             Destroy(go);
             return;
         }
 
         AircraftController ac = go.GetComponent<AircraftController>();
-
         if (ac == null)
         {
-            Debug.LogError("Префаб самолета не содержит компонент AircraftController!");
+            Debug.LogError("РџСЂРµС„Р°Р± СЃР°РјРѕР»РµС‚Р° РЅРµ СЃРѕРґРµСЂР¶РёС‚ РєРѕРјРїРѕРЅРµРЅС‚ AircraftController!");
             Destroy(go);
             return;
         }
@@ -252,16 +216,15 @@ public class RadarManager : MonoBehaviour
 
         float speed = Random.Range(minSpeed, maxSpeed);
 
-        // Настройка компонента
         ac.Initialize(radarArea, start, end, targetZone);
         ac.Speed = speed;
 
-        // Подписка на события
         ac.OnSelected += HandleAircraftSelected;
         ac.OnDestroyed += HandleAircraftDestroyed;
         ac.OnDestinationReached += HandleDestinationReached;
 
         activeAircrafts.Add(ac);
+        CreateTrajectoryLineForAircraft(ac);
     }
 
     private Vector2 GetRandomEdgePoint()
@@ -280,7 +243,9 @@ public class RadarManager : MonoBehaviour
 
     private void CheckCollisions()
     {
-        // Очистка null элементов
+        collisionWarningAircrafts.Clear();
+        criticalCollisionAircrafts.Clear();
+
         for (int i = activeAircrafts.Count - 1; i >= 0; i--)
         {
             if (activeAircrafts[i] == null)
@@ -289,7 +254,6 @@ public class RadarManager : MonoBehaviour
             }
         }
 
-        // Проверяем попарно
         for (int i = 0; i < activeAircrafts.Count; i++)
         {
             for (int j = i + 1; j < activeAircrafts.Count; j++)
@@ -298,6 +262,19 @@ public class RadarManager : MonoBehaviour
                 var a2 = activeAircrafts[j];
 
                 if (a1 == null || a2 == null) continue;
+
+                if (WillAircraftsCollideSoon(a1, a2))
+                {
+                    collisionWarningAircrafts.Add(a1);
+                    collisionWarningAircrafts.Add(a2);
+
+
+                    if (WillAircraftsCollideWithinTime(a1, a2, criticalCollisionTime))
+                    {
+                        criticalCollisionAircrafts.Add(a1);
+                        criticalCollisionAircrafts.Add(a2);
+                    }
+                }
 
                 if (a1.WillCollideWith(a2, collisionRadius))
                 {
@@ -312,7 +289,7 @@ public class RadarManager : MonoBehaviour
     {
         if (string.IsNullOrEmpty(id))
         {
-            Debug.LogWarning("SelectAircraftByID: передан пустой ID");
+            Debug.LogWarning("SelectAircraftByID: РїРµСЂРµРґР°РЅ РїСѓСЃС‚РѕР№ ID");
             return;
         }
 
@@ -325,7 +302,7 @@ public class RadarManager : MonoBehaviour
             }
         }
 
-        Debug.LogWarning($"SelectAircraftByID: самолет с ID {id} не найден");
+        Debug.LogWarning($"SelectAircraftByID: СЃР°РјРѕР»РµС‚ СЃ ID {id} РЅРµ РЅР°Р№РґРµРЅ");
     }
 
     private void HandleAircraftSelected(AircraftController ac)
@@ -349,46 +326,207 @@ public class RadarManager : MonoBehaviour
             infoText.text = ac.GetDescription();
         }
 
-        if (trajectoryLineImage != null)
-        {
-            trajectoryLineImage.gameObject.SetActive(true);
-            UpdateTrajectoryLine();
-        }
+        SetTrajectoryLineVisible(ac, true);
+        UpdateTrajectoryLine(ac);
     }
 
     private void UpdateTrajectoryLine()
     {
-        if (trajectoryLineImage == null || selectedAircraft == null)
+        if (selectedAircraft != null && !selectedAircraft.IsSelected)
         {
-            if (trajectoryLineImage != null)
-                trajectoryLineImage.gameObject.SetActive(false);
+            selectedAircraft = null;
+            HideAllZones();
+
+            if (infoText != null)
+                infoText.text = "Р’С‹Р±РµСЂРёС‚Рµ СЃР°РјРѕР»РµС‚";
+
+        }
+
+        for (int i = 0; i < activeAircrafts.Count; i++)
+        {
+            AircraftController aircraft = activeAircrafts[i];
+            if (aircraft != null)
+            {
+                UpdateTrajectoryLine(aircraft);
+            }
+        }
+    }
+
+    private void UpdateTrajectoryLine(AircraftController aircraft)
+    {
+        if (aircraft == null) return;
+
+        if (!aircraftTrajectoryLines.TryGetValue(aircraft, out AircraftTrajectoryVisual trajectoryVisual))
+            return;
+
+        if (trajectoryVisual?.Image == null || trajectoryVisual.Rect == null)
+            return;
+
+        if (!ShouldShowTrajectory(aircraft))
+        {
+            trajectoryVisual.Image.gameObject.SetActive(false);
             return;
         }
 
-        // Получаем позиции в UI координатах
-        Vector2 start = selectedAircraft.CurrentPosition;
-        Vector2 end = selectedAircraft.EndPositionWorld;
-
-
-        Vector2 direction = end - start;
-        float distance = direction.magnitude;
+        Vector2 start = aircraft.CurrentPosition;
+        Vector2 end = aircraft.EndPositionWorld;
+        Vector2 lineDirection = end - start;
+        float distance = lineDirection.magnitude;
 
         if (distance < 1f)
         {
-            trajectoryLineImage.gameObject.SetActive(false);
+            trajectoryVisual.Image.gameObject.SetActive(false);
             return;
         }
 
-        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+        float angle = Mathf.Atan2(lineDirection.y, lineDirection.x) * Mathf.Rad2Deg;
 
-        // ВАЖНО: Используем anchoredPosition (UI координаты)
-        trajectoryLineRect.anchoredPosition = start;
-        trajectoryLineRect.sizeDelta = new Vector2(distance, trajectoryLineWidth);
-        trajectoryLineRect.localRotation = Quaternion.Euler(0, 0, angle);
+        trajectoryVisual.Rect.anchoredPosition = start;
+        trajectoryVisual.Rect.sizeDelta = new Vector2(distance, trajectoryLineWidth);
+        trajectoryVisual.Rect.localRotation = Quaternion.Euler(0, 0, angle);
 
-        trajectoryLineImage.color = trajectoryLineColor;
-        trajectoryLineImage.gameObject.SetActive(true);
+        trajectoryVisual.Image.color = GetTrajectoryColor(aircraft);
+        trajectoryVisual.Image.gameObject.SetActive(true);
+    }
 
+    private void CreateTrajectoryLineForAircraft(AircraftController aircraft)
+    {
+        if (trajectoryLinePrefab == null || aircraft == null || aircraftTrajectoryLines.ContainsKey(aircraft))
+            return;
+
+        GameObject lineObj = Instantiate(trajectoryLinePrefab, radarArea);
+        Image lineImage = lineObj.GetComponent<Image>();
+        RectTransform lineRect = lineObj.GetComponent<RectTransform>();
+
+        if (lineImage == null || lineRect == null)
+        {
+            Debug.LogError("Trajectory line prefab must contain Image and RectTransform components.");
+            Destroy(lineObj);
+            return;
+        }
+
+        lineImage.type = Image.Type.Tiled;
+        lineImage.sprite = CreateDashedSprite();
+        lineImage.pixelsPerUnitMultiplier = 100f;
+        lineImage.color = trajectoryLineColor;
+        lineImage.raycastTarget = true;
+
+        lineRect.anchorMin = Vector2.zero;
+        lineRect.anchorMax = Vector2.zero;
+        lineRect.pivot = new Vector2(0, 0.5f);
+        lineRect.anchoredPosition = Vector2.zero;
+        lineRect.localPosition = Vector3.zero;
+        lineRect.localScale = Vector3.one;
+
+        TrajectoryLineClickHandler clickHandler = lineObj.GetComponent<TrajectoryLineClickHandler>();
+        if (clickHandler == null)
+        {
+            clickHandler = lineObj.AddComponent<TrajectoryLineClickHandler>();
+        }
+
+        clickHandler.Initialize(this);
+        lineObj.SetActive(false);
+
+        aircraftTrajectoryLines[aircraft] = new AircraftTrajectoryVisual
+        {
+            Image = lineImage,
+            Rect = lineRect
+        };
+    }
+
+    private void SetTrajectoryLineVisible(AircraftController aircraft, bool isVisible)
+    {
+        if (aircraft == null) return;
+
+        if (aircraftTrajectoryLines.TryGetValue(aircraft, out AircraftTrajectoryVisual trajectoryVisual) && trajectoryVisual?.Image != null)
+        {
+            trajectoryVisual.Image.gameObject.SetActive(isVisible);
+        }
+    }
+
+    private bool ShouldShowTrajectory(AircraftController aircraft)
+    {
+        if (aircraft == null) return false;
+        return collisionWarningAircrafts.Contains(aircraft) || (selectedAircraft == aircraft && aircraft.IsSelected);
+    }
+
+    private Color GetTrajectoryColor(AircraftController aircraft)
+    {
+        if (criticalCollisionAircrafts.Contains(aircraft))
+            return criticalCollisionTrajectoryColor;
+
+        if (collisionWarningAircrafts.Contains(aircraft))
+            return collisionWarningTrajectoryColor;
+
+        return trajectoryLineColor;
+    }
+
+    private bool WillAircraftsCollideSoon(AircraftController first, AircraftController second)
+    {
+        if (first == null || second == null || radarArea == null)
+            return false;
+
+        float maxPredictionTime = Mathf.Min(first.RemainingFlightTime, second.RemainingFlightTime);
+        if (!predictCollisionForWholeRoute)
+        {
+            maxPredictionTime = Mathf.Min(maxPredictionTime, collisionPredictionTime);
+        }
+
+        if (maxPredictionTime <= 0f)
+            return false;
+
+        Vector2 relativePosition = second.CurrentPosition - first.CurrentPosition;
+        Vector2 relativeVelocity = second.VelocityWorld - first.VelocityWorld;
+        float velocitySqrMagnitude = relativeVelocity.sqrMagnitude;
+        float collisionDistance = collisionRadius * radarArea.rect.width;
+
+        if (velocitySqrMagnitude < 0.0001f)
+            return relativePosition.magnitude <= collisionDistance;
+
+        float timeToClosestApproach = -Vector2.Dot(relativePosition, relativeVelocity) / velocitySqrMagnitude;
+        timeToClosestApproach = Mathf.Clamp(timeToClosestApproach, 0f, maxPredictionTime);
+
+        Vector2 closestSeparation = relativePosition + relativeVelocity * timeToClosestApproach;
+        return closestSeparation.magnitude <= collisionDistance;
+    }
+
+    private bool WillAircraftsCollideWithinTime(AircraftController first, AircraftController second, float predictionTime)
+    {
+        if (first == null || second == null || radarArea == null || predictionTime <= 0f)
+            return false;
+
+        float maxPredictionTime = Mathf.Min(predictionTime, first.RemainingFlightTime, second.RemainingFlightTime);
+        if (maxPredictionTime <= 0f)
+            return false;
+
+        Vector2 relativePosition = second.CurrentPosition - first.CurrentPosition;
+        Vector2 relativeVelocity = second.VelocityWorld - first.VelocityWorld;
+        float velocitySqrMagnitude = relativeVelocity.sqrMagnitude;
+        float collisionDistance = collisionRadius * radarArea.rect.width;
+
+        if (velocitySqrMagnitude < 0.0001f)
+            return relativePosition.magnitude <= collisionDistance;
+
+        float timeToClosestApproach = -Vector2.Dot(relativePosition, relativeVelocity) / velocitySqrMagnitude;
+        timeToClosestApproach = Mathf.Clamp(timeToClosestApproach, 0f, maxPredictionTime);
+
+        Vector2 closestSeparation = relativePosition + relativeVelocity * timeToClosestApproach;
+        return closestSeparation.magnitude <= collisionDistance;
+    }
+
+    private void RemoveTrajectoryLine(AircraftController aircraft)
+    {
+        if (aircraft == null) return;
+
+        if (aircraftTrajectoryLines.TryGetValue(aircraft, out AircraftTrajectoryVisual trajectoryVisual))
+        {
+            if (trajectoryVisual?.Image != null)
+            {
+                Destroy(trajectoryVisual.Image.gameObject);
+            }
+
+            aircraftTrajectoryLines.Remove(aircraft);
+        }
     }
 
     private Sprite CreateDashedSprite()
@@ -399,12 +537,10 @@ public class RadarManager : MonoBehaviour
         Texture2D texture = new Texture2D(width, height);
         Color[] colors = new Color[width * height];
 
-        // Создаём паттерн: 4 пикселя цвет, 4 пикселя прозрачный
         for (int y = 0; y < height; y++)
         {
             for (int x = 0; x < width; x++)
             {
-                // Каждые 8 пикселей меняем цвет
                 bool isColored = (x / 4) % 2 == 0;
                 colors[y * width + x] = isColored ? Color.white : Color.clear;
             }
@@ -420,19 +556,14 @@ public class RadarManager : MonoBehaviour
     private void HandleDestinationReached(AircraftController ac, bool hitTarget)
     {
         editTrajectoryLineImage.gameObject.SetActive(false);
+
         if (hitTarget)
         {
-            Debug.Log($"САМОЛЁТ {ac.AircraftID} УСПЕШНО ПРИБЫЛ В ЦЕЛЕВУЮ ЗОНУ!");
-
-
-            // TODO: Добавить очки, звук успеха, эффекты
+            Debug.Log($"РЎРђРњРћР›РЃРў {ac.AircraftID} РЈРЎРџР•РЁРќРћ РџР РР‘Р«Р› Р’ Р¦Р•Р›Р•Р’РЈР® Р—РћРќРЈ!");
         }
         else
         {
-            Debug.Log($"САМОЛЁТ {ac.AircraftID} ПРОМАХНУЛСЯ! Цель: {ac.TargetZoneNorm}, Прибыл: {ac.EndPosNorm}");
-
-
-            // TODO: Штраф, звук ошибки, эффекты
+            Debug.Log($"РЎРђРњРћР›РЃРў {ac.AircraftID} РџР РћРњРђРҐРќРЈР›РЎРЇ! Р¦РµР»СЊ: {ac.TargetZoneNorm}, РџСЂРёР±С‹Р»: {ac.EndPosNorm}");
         }
     }
 
@@ -440,7 +571,7 @@ public class RadarManager : MonoBehaviour
     {
         if (string.IsNullOrEmpty(id))
         {
-            Debug.LogWarning("IsAircraftExists: передан пустой ID");
+            Debug.LogWarning("IsAircraftExists: РїРµСЂРµРґР°РЅ РїСѓСЃС‚РѕР№ ID");
             return false;
         }
 
@@ -462,12 +593,14 @@ public class RadarManager : MonoBehaviour
             editTrajectoryLineImage.gameObject.SetActive(false);
             selectedAircraft = null;
             HideAllZones();
-            if (trajectoryLineImage != null)
-                trajectoryLineImage.gameObject.SetActive(false);
+
             if (infoText != null)
-                infoText.text = "Выберите самолет";
+                infoText.text = "Р’С‹Р±РµСЂРёС‚Рµ СЃР°РјРѕР»РµС‚";
         }
 
+        RemoveTrajectoryLine(ac);
+        collisionWarningAircrafts.Remove(ac);
+        criticalCollisionAircrafts.Remove(ac);
         activeAircrafts.Remove(ac);
     }
 
@@ -479,8 +612,21 @@ public class RadarManager : MonoBehaviour
             {
                 ac.OnSelected -= HandleAircraftSelected;
                 ac.OnDestroyed -= HandleAircraftDestroyed;
+                ac.OnDestinationReached -= HandleDestinationReached;
             }
         }
+
+        foreach (var trajectoryLine in aircraftTrajectoryLines.Values)
+        {
+            if (trajectoryLine?.Image != null)
+            {
+                Destroy(trajectoryLine.Image.gameObject);
+            }
+        }
+
+        aircraftTrajectoryLines.Clear();
+        collisionWarningAircrafts.Clear();
+        criticalCollisionAircrafts.Clear();
     }
 
     private void CreateEditLine()
@@ -495,7 +641,6 @@ public class RadarManager : MonoBehaviour
         editTrajectoryLineRect.anchorMax = Vector2.zero;
         editTrajectoryLineRect.pivot = new Vector2(0, 0.5f);
 
-        // Создаем простой спрайт
         Texture2D tex = new Texture2D(1, 1);
         tex.SetPixel(0, 0, Color.white);
         tex.Apply();
@@ -504,12 +649,10 @@ public class RadarManager : MonoBehaviour
         editTrajectoryLineImage.color = editLineColor;
         editTrajectoryLineImage.raycastTarget = false;
         editTrajectoryLineImage.gameObject.SetActive(false);
-
     }
 
     private void HandleTrajectoryEditing()
     {
-        
         if (!isEditingMode && !isPendingTrajectoryVisible) return;
         if (selectedAircraft == null) return;
 
@@ -517,7 +660,8 @@ public class RadarManager : MonoBehaviour
 
         if (isEditingMode)
         {
-            if (!isDraggingTrajectory) { 
+            if (!isDraggingTrajectory)
+            {
                 isDraggingTrajectory = true;
                 lastMouseX = Input.mousePosition.x;
             }
@@ -530,7 +674,6 @@ public class RadarManager : MonoBehaviour
                 {
                     float angleChange = -deltaX * 0.3f;
                     currentEditAngle += angleChange;
-
                     lastMouseX = currentMouseX;
                 }
             }
@@ -554,14 +697,12 @@ public class RadarManager : MonoBehaviour
 
             if (Input.GetKeyDown(KeyCode.Escape) || Input.GetMouseButtonDown(1))
             {
-                isEditingMode = false ;
+                isEditingMode = false;
                 isPendingTrajectoryVisible = false;
                 isDraggingTrajectory = false;
                 editTrajectoryLineImage.gameObject.SetActive(false);
                 CancelEditing();
             }
-
-                    
         }
         else if (isPendingTrajectoryVisible && pendingTrajectory.HasValue)
         {
@@ -578,7 +719,6 @@ public class RadarManager : MonoBehaviour
     {
         Vector2 size = radarArea.rect.size;
 
-        // Если направление нулевое - возвращаем точку справа
         if (direction.magnitude < 0.1f)
         {
             return new Vector2(size.x, origin.y);
@@ -586,31 +726,26 @@ public class RadarManager : MonoBehaviour
 
         direction.Normalize();
 
-        // Находим пересечение с четырьмя границами
         float tMin = float.MaxValue;
 
-        // Правая граница (x = width)
         if (direction.x > 0)
         {
             float t = (size.x - origin.x) / direction.x;
             if (t > 0 && t < tMin) tMin = t;
         }
 
-        // Левая граница (x = 0)
         if (direction.x < 0)
         {
             float t = -origin.x / direction.x;
             if (t > 0 && t < tMin) tMin = t;
         }
 
-        // Верхняя граница (y = height)
         if (direction.y > 0)
         {
             float t = (size.y - origin.y) / direction.y;
             if (t > 0 && t < tMin) tMin = t;
         }
 
-        // Нижняя граница (y = 0)
         if (direction.y < 0)
         {
             float t = -origin.y / direction.y;
@@ -618,8 +753,6 @@ public class RadarManager : MonoBehaviour
         }
 
         Vector2 result = origin + direction * tMin;
-
-        // Ограничиваем размерами (на всякий случай)
         result.x = Mathf.Clamp(result.x, 0, size.x);
         result.y = Mathf.Clamp(result.y, 0, size.y);
 
@@ -650,7 +783,6 @@ public class RadarManager : MonoBehaviour
         editTrajectoryLineImage.gameObject.SetActive(false);
         pendingTrajectory = null;
         pendingAircraftID = null;
-        
     }
 
     public void StartEditMode()
@@ -662,18 +794,16 @@ public class RadarManager : MonoBehaviour
         isPendingTrajectoryVisible = false;
         isDraggingTrajectory = false;
 
-        // Инициализируем угол текущим направлением самолёта
         Vector2 currentDir = selectedAircraft.GetDirection();
         currentEditAngle = Mathf.Atan2(currentDir.y, currentDir.x) * Mathf.Rad2Deg;
 
         editTrajectoryLineImage.gameObject.SetActive(true);
 
-        // Показываем начальную линию
         Vector2 start = selectedAircraft.CurrentPosition;
         Vector2 edgePoint = GetEdgePoint(start, currentDir);
         UpdateEditLine(start, edgePoint);
 
-        Debug.Log($"Начальный угол: {currentEditAngle:F1}°");
+        Debug.Log($"РќР°С‡Р°Р»СЊРЅС‹Р№ СѓРіРѕР»: {currentEditAngle:F1}В°");
     }
 
     public void ApplyPendingTrajectory(string aircraftID)
@@ -684,11 +814,12 @@ public class RadarManager : MonoBehaviour
             if (ac != null)
             {
                 ac.SetNewDestination(pendingTrajectory.Value);
+                UpdateTrajectoryLine(ac);
                 isPendingTrajectoryVisible = false;
                 editTrajectoryLineImage.gameObject.SetActive(false);
                 pendingTrajectory = null;
                 pendingAircraftID = null;
-                Debug.Log($"Траектория применена для {aircraftID}");
+                Debug.Log($"РўСЂР°РµРєС‚РѕСЂРёСЏ РїСЂРёРјРµРЅРµРЅР° РґР»СЏ {aircraftID}");
             }
         }
     }
@@ -715,26 +846,25 @@ public class RadarManager : MonoBehaviour
         Vector2 center;
         Vector2 zoneSize;
 
-        // Определяем сторону
-        if (Mathf.Approximately(normPos.x, 0f)) // Левая
+        if (Mathf.Approximately(normPos.x, 0f))
         {
             center = new Vector2(0, normPos.y * size.y);
             zoneSize = new Vector2(width * size.x, size.y * 0.15f);
             zoneRect.pivot = new Vector2(0, 0.5f);
         }
-        else if (Mathf.Approximately(normPos.x, 1f)) // Правая
+        else if (Mathf.Approximately(normPos.x, 1f))
         {
             center = new Vector2(size.x, normPos.y * size.y);
             zoneSize = new Vector2(width * size.x, size.y * 0.15f);
             zoneRect.pivot = new Vector2(1, 0.5f);
         }
-        else if (Mathf.Approximately(normPos.y, 0f)) // Нижняя
+        else if (Mathf.Approximately(normPos.y, 0f))
         {
             center = new Vector2(normPos.x * size.x, 0);
             zoneSize = new Vector2(size.x * 0.15f, width * size.y);
             zoneRect.pivot = new Vector2(0.5f, 0);
         }
-        else // Верхняя
+        else
         {
             center = new Vector2(normPos.x * size.x, size.y);
             zoneSize = new Vector2(size.x * 0.15f, width * size.y);
@@ -749,23 +879,20 @@ public class RadarManager : MonoBehaviour
 
     private string GetEdgeName(Vector2 norm)
     {
-        if (Mathf.Approximately(norm.x, 0f)) return "ЛЕВО";
-        if (Mathf.Approximately(norm.x, 1f)) return "ПРАВО";
-        if (Mathf.Approximately(norm.y, 0f)) return "НИЗ";
-        if (Mathf.Approximately(norm.y, 1f)) return "ВЕРХ";
-        return "НЕИЗВЕСТНО";
+        if (Mathf.Approximately(norm.x, 0f)) return "Р›Р•Р’Рћ";
+        if (Mathf.Approximately(norm.x, 1f)) return "РџР РђР’Рћ";
+        if (Mathf.Approximately(norm.y, 0f)) return "РќРР—";
+        if (Mathf.Approximately(norm.y, 1f)) return "Р’Р•Р РҐ";
+        return "РќР•РР—Р’Р•РЎРўРќРћ";
     }
-
 
     private void CreateZones()
     {
-        // Целевая зона (зелёная)
         GameObject targetObj = new GameObject("TargetZone", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
         targetObj.transform.SetParent(radarArea, false);
         targetZoneImage = targetObj.GetComponent<Image>();
         targetZoneRect = targetObj.GetComponent<RectTransform>();
         SetupZone(targetZoneImage, targetZoneRect, targetZoneColor);
-
     }
 
     private void SetupZone(Image img, RectTransform rect, Color color)
@@ -789,9 +916,9 @@ public class RadarManager : MonoBehaviour
 
     private int GetEdgeSide(Vector2 normPoint)
     {
-        if (Mathf.Approximately(normPoint.x, 0f)) return 0; // Левая
-        if (Mathf.Approximately(normPoint.x, 1f)) return 1; // Правая
-        if (Mathf.Approximately(normPoint.y, 0f)) return 2; // Нижняя
-        return 3; // Верхняя
+        if (Mathf.Approximately(normPoint.x, 0f)) return 0;
+        if (Mathf.Approximately(normPoint.x, 1f)) return 1;
+        if (Mathf.Approximately(normPoint.y, 0f)) return 2;
+        return 3;
     }
 }
