@@ -11,7 +11,7 @@ public class RadioButton : MonoBehaviour, Interactable
     [SerializeField] private Material defaultMaterial;
     [SerializeField] private Material pressedMaterial;
     [SerializeField] private Material hoverMaterial;
-    [SerializeField] private float pressDepth = 0.01f;
+    [SerializeField] private float pressDepth = 0.0001f;
 
     [Header("Audio")]
     [SerializeField] private AudioClip clickSound;
@@ -89,12 +89,22 @@ public class RadioButton : MonoBehaviour, Interactable
         if (isPressed) yield break;
         isPressed = true;
 
-        if (buttonRenderer != null && pressedMaterial != null)
-        {
-            buttonRenderer.material = pressedMaterial;
-        }
+        //if (buttonRenderer != null && pressedMaterial != null)
+        //{
+        //    buttonRenderer.material = pressedMaterial;
+        //}
 
-        transform.localPosition = originalPosition + Vector3.down * pressDepth;
+        Vector3 startWorldPos = transform.position;
+
+        Vector3 pressDirection = -transform.forward;
+
+        Debug.Log($"Начальная позиция (world): {startWorldPos}");
+        Debug.Log($"Направление нажатия: {pressDirection}");
+
+        // Двигаем в world space
+        transform.position = startWorldPos + pressDirection * pressDepth;
+
+        Debug.Log($"Позиция при нажатии (world): {transform.position}");
 
         if (audioSource != null && clickSound != null)
         {
@@ -103,12 +113,12 @@ public class RadioButton : MonoBehaviour, Interactable
 
         yield return new WaitForSeconds(0.1f);
 
-        if (buttonRenderer != null && defaultMaterial != null)
-        {
-            buttonRenderer.material = defaultMaterial;
-        }
+        //if (buttonRenderer != null && defaultMaterial != null)
+        //{
+        //    buttonRenderer.material = defaultMaterial;
+        //}
 
-        transform.localPosition = originalPosition;
+        transform.position = startWorldPos;
         isPressed = false;
     }
 

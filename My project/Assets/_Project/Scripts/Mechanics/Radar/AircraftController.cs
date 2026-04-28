@@ -88,7 +88,7 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
         rectTransform.anchorMax = Vector2.zero;
         rectTransform.pivot = new Vector2(0.5f, 0.5f);
 
-        rectTransform.sizeDelta = new Vector2(20, 20);
+        rectTransform.sizeDelta = new Vector2(60, 60);
 
         if (aircraftImage != null)
         {

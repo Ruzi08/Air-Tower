@@ -115,6 +115,17 @@ public class RadarScreenInteractable : MonoBehaviour, Interactable
 
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
+
+        if (radarCanvas != null)
+        {
+            radarCanvas.worldCamera = radarCamera;
+            radarCanvas.renderMode = RenderMode.WorldSpace;
+
+            Debug.Log($"Canvas worldCamera: {radarCanvas.worldCamera?.name}");
+            Debug.Log($"RadarCamera активна: {radarCamera.gameObject.activeSelf}");
+            Debug.Log($"RadarCamera позиция: {radarCamera.transform.position}");
+            Debug.Log($"Canvas позиция: {radarCanvas.transform.position}");
+        }
     }
 
     private void DeactivateRadar()

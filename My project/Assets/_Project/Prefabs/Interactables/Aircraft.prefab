@@ -95,3 +95,7 @@ MonoBehaviour:
   aircraftImage: {fileID: 0}
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   selectedColor: {r: 0, g: 1, b: 0, a: 1}
+  aircraftID: 
+  generateIDOnAwake: 1
+  targetZoneNorm: {x: 0, y: 0}
+  holdTimeToEdit: 0.3
