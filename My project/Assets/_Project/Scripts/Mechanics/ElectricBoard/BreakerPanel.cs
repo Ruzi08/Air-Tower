@@ -23,7 +23,10 @@ public class BreakerPanel : MonoBehaviour
     private Quaternion savedCameraRot;
     private Camera mainCamera;
     private Coroutine cameraMoveCoroutine;
-
+    
+    [Header("Звуки")]
+    public ElectricityFixSound sound;
+    
     void Start()
     {
         mainCamera = Camera.main;
@@ -36,6 +39,10 @@ public class BreakerPanel : MonoBehaviour
         {
             PowerManager.Instance.OnPowerOut += HandlePowerOut;
         }
+        if (sound == null)
+            sound = GetComponent<ElectricityFixSound>();
+        if (sound == null)
+            sound = gameObject.AddComponent<ElectricityFixSound>();
     }
 
     void Update()
@@ -57,12 +64,14 @@ public class BreakerPanel : MonoBehaviour
 
     public void OnLidOpened()
     {
+        
         Debug.Log("🔓 Крышка открыта, открываем панель");
         OpenPanel();
     }
 
     public void OnLidClosed()
     {
+        sound.PlayLidClose();
         Debug.Log("🔒 Крышка закрыта, закрываем панель");
         ClosePanel();
     }
@@ -130,7 +139,6 @@ public class BreakerPanel : MonoBehaviour
     private void OpenPanel()
     {
         if (isPanelOpen) return;
-        
         isPanelOpen = true;
         
         if (mainCamera != null)
