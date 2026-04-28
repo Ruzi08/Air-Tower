@@ -130,11 +130,12 @@ public class RadarScreenInteractable : MonoBehaviour, Interactable
 
     private void DeactivateRadar()
     {
-        if (CrosshairController.Instance != null)
-            CrosshairController.Instance.Show();
-
+        // ✅ Скрываем курсор при выходе из радара
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
+
+        if (CrosshairController.Instance != null)
+            CrosshairController.Instance.Show();
 
         isUsingRadar = false;
 
@@ -151,7 +152,8 @@ public class RadarScreenInteractable : MonoBehaviour, Interactable
 
     void Update()
     {
-        if (isUsingRadar && Input.GetKeyDown(exitKey))
+        // ✅ Выход по Escape ИЛИ по правой кнопке мыши
+        if (isUsingRadar && (Input.GetKeyDown(exitKey) || Input.GetMouseButtonDown(1)))
         {
             DeactivateRadar();
         }
