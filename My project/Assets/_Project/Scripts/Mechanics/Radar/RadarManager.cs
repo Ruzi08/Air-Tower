@@ -23,6 +23,7 @@ public class RadarManager : MonoBehaviour
     [SerializeField] private int maxAircrafts = 10;
     [SerializeField] private float minSpeed = 0.1f;
     [SerializeField] private float maxSpeed = 0.5f;
+    [SerializeField] private float spawnInset = 0.05f;
 
     [Header("Collision")]
     [SerializeField] private float collisionRadius = 0.04f;
@@ -200,8 +201,8 @@ public class RadarManager : MonoBehaviour
             return;
         }
 
-        Vector2 start = GetRandomEdgePoint();
-        int startSide = GetEdgeSide(start);
+        int startSide = Random.Range(0, 4);
+        Vector2 start = GetEdgePointOnSide(startSide, spawnInset);
 
         Vector2 targetZone = GetRandomEdgePoint();
         while (GetEdgeSide(targetZone) == startSide) targetZone = GetRandomEdgePoint();
@@ -230,14 +231,21 @@ public class RadarManager : MonoBehaviour
     private Vector2 GetRandomEdgePoint()
     {
         int side = Random.Range(0, 4);
+        return GetEdgePointOnSide(side, 0f);
+    }
+
+    private Vector2 GetEdgePointOnSide(int side, float inset)
+    {
+        inset = Mathf.Clamp01(inset);
         float rand = Random.value;
+        float clampedRand = Mathf.Lerp(inset, 1f - inset, rand);
 
         switch (side)
         {
-            case 0: return new Vector2(0, rand);
-            case 1: return new Vector2(1, rand);
-            case 2: return new Vector2(rand, 0);
-            default: return new Vector2(rand, 1);
+            case 0: return new Vector2(inset, clampedRand);
+            case 1: return new Vector2(1f - inset, clampedRand);
+            case 2: return new Vector2(clampedRand, inset);
+            default: return new Vector2(clampedRand, 1f - inset);
         }
     }
 
