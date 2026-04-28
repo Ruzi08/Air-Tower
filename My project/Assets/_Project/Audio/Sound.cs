@@ -160,4 +160,9 @@ void OnDrawGizmosSelected()
     {
         fadeSpeed = Mathf.Max(0.1f, speed);
     }
+
+    public void PlaySnd()
+    {
+        PlaySnd(sounds[0], loop: loop, volume: volume, destroyed: destroyed, p1: minPitch, p2: maxPitch);
+    }
 }
