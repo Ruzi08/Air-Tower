@@ -26,6 +26,9 @@ public class BreakerSwitch : MonoBehaviour, Interactable
 
     private Material[] originalBulbMaterials;
 
+    [Header("Звуки")]
+    public ElectricityFixSound sound;
+
     void Start()
     {
         // Запоминаем повороты
@@ -48,7 +51,10 @@ public class BreakerSwitch : MonoBehaviour, Interactable
         {
             originalBulbMaterials = bulbRenderer.materials;
         }
-
+        if (sound == null)
+            sound = GetComponent<ElectricityFixSound>();
+        if (sound == null)
+            sound = gameObject.AddComponent<ElectricityFixSound>();
         UpdateBulbVisual();
     }
     
@@ -80,7 +86,7 @@ public class BreakerSwitch : MonoBehaviour, Interactable
         // Анимация поворота в выбитое положение
         targetRotation = brokenRotationQuat;
         isAnimating = true;
-        
+        sound?.PlaySwitchOff();
         Debug.Log($"💥 Рычажок {gameObject.name} выбито! Поворот на {brokenRotation}");
     }
 
@@ -93,7 +99,7 @@ public class BreakerSwitch : MonoBehaviour, Interactable
         }
         
         if (isFixed) return;
-
+        
         FixSwitch();
     }
 
@@ -106,9 +112,9 @@ public class BreakerSwitch : MonoBehaviour, Interactable
         // Анимация поворота обратно в исходное положение
         targetRotation = originalRotation;
         isAnimating = true;
-
+        sound?.PlaySwitchOn();
         Debug.Log($"✅ Рычажок {gameObject.name} включён. Возврат в исходное положение");
-
+        
         if (panel != null)
             panel.OnSwitchFixed();
     }

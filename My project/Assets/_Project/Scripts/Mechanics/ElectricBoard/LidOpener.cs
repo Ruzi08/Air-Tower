@@ -4,7 +4,7 @@ public class LidOpener : MonoBehaviour, Interactable
 {
     [Header("Настройки открывания")]
     public Vector3 openRotation = new Vector3(0, -90, 0);
-    public float openSpeed = 180f;
+    public float openSpeed = 200f;
     
     [Header("Ссылки")]
     public BreakerPanel panel;
@@ -14,6 +14,9 @@ public class LidOpener : MonoBehaviour, Interactable
     private Quaternion targetRotation;
     private bool isOpen = false;
     private bool isAnimating = false;
+    
+    [Header("Звуки")]
+    public ElectricityFixSound sound;
     
     void Start()
     {
@@ -71,12 +74,17 @@ public class LidOpener : MonoBehaviour, Interactable
                 cameraHeadBob.ResetToOriginalPosition();
             }
         }
-        
+
         if (isOpen)
+        {
+            sound.PlayLidOpen();
             targetRotation = closedRotation * Quaternion.Euler(openRotation);
+        }
         else
+        {
             targetRotation = closedRotation;
-        
+        }
+
         isAnimating = true;
     }
     
