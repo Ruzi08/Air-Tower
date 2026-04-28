@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class LightSwitch : Sound, Interactable
 {
@@ -10,7 +11,14 @@ public class LightSwitch : Sound, Interactable
     public GameObject switchOnVisual;
     public GameObject switchOffVisual;
     
+    [Header("Анимация поворота")]
+    public Vector3 pressedRotation = new Vector3(15f, 0, 0);
+    public float animationSpeed = 15f;
+    
     private bool hasPower = true;
+    private Quaternion originalRotation;
+    private Quaternion targetRotation;
+    private bool isAnimating = false;
     
     protected override void Start()
     {
@@ -22,13 +30,49 @@ public class LightSwitch : Sound, Interactable
         CurrentVolume = minVolume;
         TargetVolume = minVolume;
         
-        SetLampsState(isOn);
+        originalRotation = transform.localRotation;
+        
+        if (isOn)
+        {
+            targetRotation = originalRotation;
+            transform.localRotation = originalRotation;
+        }
+        else
+        {
+            targetRotation = originalRotation * Quaternion.Euler(pressedRotation);
+            transform.localRotation = targetRotation;
+        }
+        
+        if (PowerManager.Instance != null)
+        {
+            hasPower = PowerManager.Instance.HasPower();
+        }
+        
+        UpdateLampsState();
         UpdateVisual();
         
         if (PowerManager.Instance != null)
         {
             PowerManager.Instance.OnPowerOut += HandlePowerOut;
             PowerManager.Instance.OnPowerRestored += HandlePowerRestored;
+        }
+    }
+    
+    void Update()
+    {
+        if (isAnimating)
+        {
+            transform.localRotation = Quaternion.RotateTowards(
+                transform.localRotation, 
+                targetRotation, 
+                animationSpeed * Time.deltaTime
+            );
+            
+            if (Quaternion.Angle(transform.localRotation, targetRotation) < 0.1f)
+            {
+                transform.localRotation = targetRotation;
+                isAnimating = false;
+            }
         }
     }
     
@@ -44,37 +88,55 @@ public class LightSwitch : Sound, Interactable
     private void HandlePowerOut()
     {
         hasPower = false;
-        
-        // ✅ Синхронизируем isOn с реальностью: лампы выключены, значит isOn = false
         isOn = false;
         
+        targetRotation = originalRotation * Quaternion.Euler(pressedRotation);
+        isAnimating = true;
+        
+        UpdateLampsState();
         UpdateVisual();
         
-        foreach (Lamp lamp in lamps)
-            if (lamp != null) lamp.TurnOff();
-        
-        Debug.Log($"Выключатель: электричество пропало, isOn сброшен на false");
+        Debug.Log($"{name}: электричество пропало -> выключатель сброшен в OFF");
     }
     
     private void HandlePowerRestored()
     {
         hasPower = true;
+        
+        // 🔥 Принудительно обновляем лампы
+        UpdateLampsState();
         UpdateVisual();
         
-        // ✅ НЕ включаем лампы автоматически, isOn остаётся false
-        Debug.Log($"Выключатель: электричество вернулось, isOn={isOn}, нужно нажать чтобы включить");
+        Debug.Log($"{name}: электричество вернулось, isOn={isOn}, лампы должны {(hasPower && isOn ? "гореть" : "не гореть")}");
+        
+        // 🔥 Дополнительная проверка через корутину (на всякий случай)
+        StartCoroutine(DelayedLampUpdate());
+    }
+    
+    private IEnumerator DelayedLampUpdate()
+    {
+        yield return null; // Ждём один кадр
+        UpdateLampsState();
+        Debug.Log($"{name}: повторное обновление ламп, shouldBeOn={hasPower && isOn}");
     }
     
     public void Interact()
     {
-        if (!hasPower)
-        {
-            Debug.Log("Нет электричества! Выключатель не работает.");
-            return;
-        }
+        if (isAnimating) return;
         
         isOn = !isOn;
-        SetLampsState(isOn);
+        
+        if (isOn)
+        {
+            targetRotation = originalRotation;
+        }
+        else
+        {
+            targetRotation = originalRotation * Quaternion.Euler(pressedRotation);
+        }
+        isAnimating = true;
+        
+        UpdateLampsState();
         UpdateVisual();
         
         if (sounds != null && sounds.Length > 0 && sounds[0] != null)
@@ -82,17 +144,27 @@ public class LightSwitch : Sound, Interactable
             PlaySnd(sounds[0], volume: maxVolume, p1: minPitch, p2: maxPitch);
         }
         
-        Debug.Log($"Свет {(isOn ? "включён" : "выключен")}");
+        Debug.Log($"Выключатель {(isOn ? "включён" : "выключен")}, свет: {(hasPower && isOn ? "горит" : "не горит")}");
     }
     
-    private void SetLampsState(bool state)
+    private void UpdateLampsState()
     {
+        bool shouldBeOn = hasPower && isOn;
+        
         foreach (Lamp lamp in lamps)
         {
             if (lamp != null)
             {
-                if (state) lamp.TurnOn();
-                else lamp.TurnOff();
+                if (shouldBeOn) 
+                {
+                    lamp.TurnOn();
+                    Debug.Log($"{name}: включаю лампу {lamp.name}");
+                }
+                else 
+                {
+                    lamp.TurnOff();
+                    Debug.Log($"{name}: выключаю лампу {lamp.name}");
+                }
             }
         }
     }
@@ -100,15 +172,25 @@ public class LightSwitch : Sound, Interactable
     private void UpdateVisual()
     {
         if (switchOnVisual != null)
-            switchOnVisual.SetActive(isOn && hasPower);
+            switchOnVisual.SetActive(isOn);
         
         if (switchOffVisual != null)
-            switchOffVisual.SetActive(!isOn || !hasPower);
+            switchOffVisual.SetActive(!isOn);
     }
     
     public void UpdatePowerState(bool powerAvailable)
     {
         hasPower = powerAvailable;
+        UpdateLampsState();
+        UpdateVisual();
+    }
+    
+    public void ResetToDefaultState()
+    {
+        isOn = true;
+        targetRotation = originalRotation;
+        isAnimating = true;
+        UpdateLampsState();
         UpdateVisual();
     }
     

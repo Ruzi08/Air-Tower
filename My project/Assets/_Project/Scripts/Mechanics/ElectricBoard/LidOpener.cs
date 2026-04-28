@@ -8,6 +8,7 @@ public class LidOpener : MonoBehaviour, Interactable
     
     [Header("Ссылки")]
     public BreakerPanel panel;
+    public CameraHeadBob cameraHeadBob; // Перетащи сюда камеру с компонентом
     
     private Quaternion closedRotation;
     private Quaternion targetRotation;
@@ -18,6 +19,13 @@ public class LidOpener : MonoBehaviour, Interactable
     {
         closedRotation = transform.localRotation;
         targetRotation = closedRotation;
+        
+        if (cameraHeadBob == null)
+        {
+            Camera cam = Camera.main;
+            if (cam != null)
+                cameraHeadBob = cam.GetComponent<CameraHeadBob>();
+        }
     }
     
     void Update()
@@ -51,6 +59,18 @@ public class LidOpener : MonoBehaviour, Interactable
         if (isAnimating) return;
         
         isOpen = !isOpen;
+        
+        if (cameraHeadBob != null)
+        {
+            // Просто включаем/выключаем компонент
+            cameraHeadBob.enabled = !isOpen;
+            
+            // Сбрасываем позицию камеры
+            if (isOpen)
+            {
+                cameraHeadBob.ResetToOriginalPosition();
+            }
+        }
         
         if (isOpen)
             targetRotation = closedRotation * Quaternion.Euler(openRotation);
