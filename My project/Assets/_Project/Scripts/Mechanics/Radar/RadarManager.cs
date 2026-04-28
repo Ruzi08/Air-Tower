@@ -409,7 +409,7 @@ public class RadarManager : MonoBehaviour
         lineImage.sprite = CreateDashedSprite();
         lineImage.pixelsPerUnitMultiplier = 100f;
         lineImage.color = trajectoryLineColor;
-        lineImage.raycastTarget = true;
+        lineImage.raycastTarget = false;
 
         lineRect.anchorMin = Vector2.zero;
         lineRect.anchorMax = Vector2.zero;
@@ -418,13 +418,6 @@ public class RadarManager : MonoBehaviour
         lineRect.localPosition = Vector3.zero;
         lineRect.localScale = Vector3.one;
 
-        TrajectoryLineClickHandler clickHandler = lineObj.GetComponent<TrajectoryLineClickHandler>();
-        if (clickHandler == null)
-        {
-            clickHandler = lineObj.AddComponent<TrajectoryLineClickHandler>();
-        }
-
-        clickHandler.Initialize(this);
         lineObj.SetActive(false);
 
         aircraftTrajectoryLines[aircraft] = new AircraftTrajectoryVisual
