@@ -22,6 +22,10 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
 
     [Header("Target Zone")]
     [SerializeField] private Vector2 targetZoneNorm;
+    
+    [Header("Audio")]
+    public AudioClip aircraftSelectSound;
+    private AudioSource audioSource;
 
     public Vector2 TargetZoneNorm => targetZoneNorm;
     public Vector2 TargetZoneWorld => NormToWorld(targetZoneNorm);
@@ -68,6 +72,10 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
 
     private void Awake()
     {
+        audioSource = GetComponentInParent<AudioSource>();
+        if (audioSource == null)
+            audioSource = gameObject.AddComponent<AudioSource>();
+        audioSource.playOnAwake = false;
         if (rectTransform == null) rectTransform = GetComponent<RectTransform>();
         if (aircraftImage == null) aircraftImage = GetComponent<Image>();
         if (generateIDOnAwake && string.IsNullOrEmpty(aircraftID))
@@ -151,6 +159,7 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
     public void Interact()
     {
         ToggleSelection();
+        
     }
 
     public string GetDescription()
@@ -172,6 +181,8 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
 
     private void ToggleSelection()
     {
+        if (aircraftSelectSound != null && audioSource != null)
+            audioSource.PlayOneShot(aircraftSelectSound);
         SetSelected(!isSelected);
     }
 

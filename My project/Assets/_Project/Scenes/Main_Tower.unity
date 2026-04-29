@@ -2044,7 +2044,7 @@ MonoBehaviour:
   redLamp: {fileID: 2064453856}
   radarManager: {fileID: 838849188}
   yellowBlinkInterval: 0.5
-  redBlinkInterval: 0.25
+  redBlinkInterval: 0.31
   greenBlinkDuration: 0.3
   lampsnd: {fileID: 366947303}
 --- !u!114 &366947303
@@ -2068,7 +2068,7 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 6ca767403edb27f4db57f84825ab9af8, type: 3}
   - {fileID: 8300000, guid: 6de683939daa8be43a0cc628d85867a0, type: 3}
   isPlaying: 0
-  minVolume: 0
+  minVolume: 0.05
   maxVolume: 1
   maxDistance: 20
   fadeSpeed: 5
@@ -6625,6 +6625,7 @@ GameObject:
   m_Component:
   - component: {fileID: 838849189}
   - component: {fileID: 838849188}
+  - component: {fileID: 838849190}
   m_Layer: 0
   m_Name: RadarSystem
   m_TagString: Untagged
@@ -6670,6 +6671,10 @@ MonoBehaviour:
   targetZoneColor: {r: 0, g: 1, b: 0, a: 0.4}
   targetZoneWidth: 0.12
   edgeDetectionEpsilon: 0.001
+  initialMaxAircrafts: 1
+  advancedMaxAircrafts: 3
+  successfulArrivalsToAdvance: 3
+  aircraftSelectSound: {fileID: 8300000, guid: ce9cd2951bb61864e8355a575a7b28c6, type: 3}
 --- !u!4 &838849189
 Transform:
   m_ObjectHideFlags: 0
@@ -6686,6 +6691,103 @@ Transform:
   - {fileID: 2131776928}
   m_Father: {fileID: 1688907611}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!82 &838849190
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 838849187}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: -4697775348444791383, guid: 839800bfac5eadc4c8a820971871d2e5, type: 2}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 0.35
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!4 &850594593 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2653064858041252897, guid: 7a5a9ce3b91658341938b09b915d8e37, type: 3}
@@ -18950,6 +19052,8 @@ MonoBehaviour:
   radarCanvas: {fileID: 717242475}
   playerController: {fileID: 0}
   cameraController: {fileID: 0}
+  radarOpenSound: {fileID: 8300000, guid: 16e37561efe511a49a4ddaa9f0dd6789, type: 3}
+  radarCloseSound: {fileID: 8300000, guid: 5eb3dd7928b2b874b8e77254e8a72f43, type: 3}
   exitKey: 27
 --- !u!64 &2131776930
 MeshCollider:

@@ -10,22 +10,36 @@ public class RadarScreenInteractable : MonoBehaviour, Interactable
     [SerializeField] private Canvas radarCanvas;
     [SerializeField] private MonoBehaviour playerController;
     [SerializeField] private MonoBehaviour cameraController;
-
+    
+    [Header("Audio")]
+    [SerializeField] private AudioClip radarOpenSound;
+    [SerializeField] private AudioClip radarCloseSound;
+    private AudioSource audioSource;
+    
     [Header("Settings")]
     [SerializeField] private KeyCode exitKey = KeyCode.Escape;
+    
+
 
     private bool isUsingRadar = false;
     
     // ✅ Флаг электричества
     private bool hasPower = true;
 
+    void Awake()
+    {
+        audioSource = GetComponentInParent<AudioSource>();
+        if (audioSource == null)
+            audioSource = gameObject.AddComponent<AudioSource>();
+        audioSource.playOnAwake = false;
+    }
     void Start()
     {
         if (playerCamera == null)
             playerCamera = Camera.main;
         if (playerController == null)
             playerController = FindObjectOfType<PlayerInteractor>();
-
+        
         if (radarCamera != null)
             radarCamera.gameObject.SetActive(false);
 
@@ -126,6 +140,9 @@ public class RadarScreenInteractable : MonoBehaviour, Interactable
             Debug.Log($"RadarCamera позиция: {radarCamera.transform.position}");
             Debug.Log($"Canvas позиция: {radarCanvas.transform.position}");
         }
+        if (radarOpenSound != null)
+            audioSource.PlayOneShot(radarOpenSound);
+        
     }
 
     private void DeactivateRadar()
@@ -148,6 +165,8 @@ public class RadarScreenInteractable : MonoBehaviour, Interactable
             playerController.enabled = true;
         if (cameraController != null)
             cameraController.enabled = true;
+        if (radarOpenSound != null)
+            audioSource.PlayOneShot(radarCloseSound);
     }
 
     void Update()
