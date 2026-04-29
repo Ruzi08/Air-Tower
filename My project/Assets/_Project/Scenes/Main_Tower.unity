@@ -4537,7 +4537,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a72f9a1bc9568194b92411d80c54229b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RadioButton
-  isUpButton: 1
+  isUpButton: 0
   parentSelector: {fileID: 504436270}
   maxInteractDistance: 2.5
   defaultMaterial: {fileID: -8274133419916619345, guid: 860790e99e6810249a699ba5021a464b, type: 3}
@@ -5275,7 +5275,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a72f9a1bc9568194b92411d80c54229b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RadioButton
-  isUpButton: 1
+  isUpButton: 0
   parentSelector: {fileID: 1266617448}
   maxInteractDistance: 2.5
   defaultMaterial: {fileID: -8274133419916619345, guid: 860790e99e6810249a699ba5021a464b, type: 3}
