@@ -212,8 +212,8 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
         char letter1 = (char)random.Next('A', 'K' + 1);
         char letter2 = (char)random.Next('A', 'K' + 1);
 
-        lastGeneratedNumber = (lastGeneratedNumber + 1) % 50;
-        string number = lastGeneratedNumber.ToString("D2");
+        int randomNumber = random.Next(0, 50);
+        string number = randomNumber.ToString("D2");
 
         return $"{letter1}{letter2}{number}";
     }
