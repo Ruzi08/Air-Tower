@@ -5,6 +5,11 @@ public class LampSound : Sound
     private bool isYellowPlaying = false;
     private bool isRedPlaying = false;
 
+    protected override void Start()
+    {
+        
+    }
+    
     protected override void Awake()
     {
         base.Awake();
