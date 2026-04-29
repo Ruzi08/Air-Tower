@@ -1,6 +1,7 @@
 using NUnit.Framework.Interfaces;
 using System.Collections.Generic;
 using System.ComponentModel;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
@@ -42,7 +43,7 @@ public class RadarManager : MonoBehaviour
     [SerializeField] private Color criticalCollisionTrajectoryColor = Color.red;
 
     [Header("UI - Selection Display")]
-    [SerializeField] private Text infoText;
+    [SerializeField] private TextMeshPro infoText;
     [SerializeField] private GameObject trajectoryLinePrefab;
     [SerializeField] private float trajectoryLineWidth = 2f;
     [SerializeField] private Color trajectoryLineColor = Color.green;

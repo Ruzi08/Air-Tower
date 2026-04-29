@@ -154,7 +154,7 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
 
     public string GetDescription()
     {
-        return $"ID: {aircraftID}\nТраектория: ({startPosNorm.x:F2}, {startPosNorm.y:F2}) → ({endPosNorm.x:F2}, {endPosNorm.y:F2})\nПрогресс: {(progress * 100f):F1}%";
+        return $"ID: {aircraftID}";
     }
 
     public void OnPointerClick(PointerEventData eventData)
