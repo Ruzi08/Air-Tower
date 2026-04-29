@@ -67,6 +67,10 @@ public class RadarManager : MonoBehaviour
     [SerializeField] private int advancedMaxAircrafts = 3;
     [SerializeField] private int successfulArrivalsToAdvance = 3;
 
+    [Header("Audio")]
+    [SerializeField] private AudioClip aircraftSelectSound;
+    private AudioSource audioSource;
+    
     private int successfulArrivalsCount = 0;
     private bool isAdvancedMode = false;
 
@@ -100,6 +104,10 @@ public class RadarManager : MonoBehaviour
     private void Awake()
     {
         InitializeContainer();
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+            audioSource = gameObject.AddComponent<AudioSource>();
+        audioSource.playOnAwake = false;
     }
     
     public int GetActiveAircraftCount() => activeAircrafts.Count;
@@ -239,7 +247,7 @@ public class RadarManager : MonoBehaviour
 
         ac.Initialize(radarArea, start, end, targetZone);
         ac.Speed = speed;
-
+        ac.aircraftSelectSound = aircraftSelectSound;
         ac.OnSelected += HandleAircraftSelected;
         ac.OnDestroyed += HandleAircraftDestroyed;
         ac.OnDestinationReached += HandleDestinationReached;
@@ -343,6 +351,7 @@ public class RadarManager : MonoBehaviour
         if (selectedAircraft != null && selectedAircraft != ac)
         {
             selectedAircraft.SetSelected(false);
+            
         }
 
         selectedAircraft = ac;
@@ -355,6 +364,8 @@ public class RadarManager : MonoBehaviour
 
         SetTrajectoryLineVisible(ac, true);
         UpdateTrajectoryLine(ac);
+        
+        
     }
 
     private void UpdateTrajectoryLine()
@@ -638,7 +649,6 @@ public class RadarManager : MonoBehaviour
             if (infoText != null)
                 infoText.text = "Select aircraft";
         }
-
         RemoveTrajectoryLine(ac);
         collisionWarningAircrafts.Remove(ac);
         criticalCollisionAircrafts.Remove(ac);
@@ -820,6 +830,7 @@ public class RadarManager : MonoBehaviour
 
     private void CancelEditing()
     {
+        
         isEditingMode = false;
         isPendingTrajectoryVisible = false;
         isDraggingTrajectory = false;
