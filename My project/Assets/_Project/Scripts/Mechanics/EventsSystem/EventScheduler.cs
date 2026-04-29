@@ -27,8 +27,9 @@ public class ScheduledEvent
     public GameObject targetObject;
     public float lookAngle = 15f;
     public float lookDuration = 1f;
-    public bool checkObstacle = true;      // 🔥 Проверять ли препятствия
-    public LayerMask obstacleLayer = -1;   // 🔥 Слой препятствий (стены)
+    public bool checkObstacle = true;
+    public LayerMask obstacleLayer = -1;
+    public float maxLookDistance = 5f; // Максимальная дистанция для срабатывания
     
     // Для OnEnterZone / OnExitZone
     public Collider zoneCollider;
@@ -121,21 +122,30 @@ public class EventScheduler : MonoBehaviour
     {
         if (evt.targetObject == null || playerCamera == null) return false;
         
+        // Проверка расстояния
+        float distanceToTarget = Vector3.Distance(playerCamera.transform.position, evt.targetObject.transform.position);
+        
+        // Если задана максимальная дистанция и игрок дальше - не триггерим
+        if (evt.maxLookDistance > 0 && distanceToTarget > evt.maxLookDistance)
+        {
+            if (lookTimers.ContainsKey(evt.targetObject))
+                lookTimers[evt.targetObject] = 0f;
+            return false;
+        }
+        
         Vector3 directionToTarget = (evt.targetObject.transform.position - playerCamera.transform.position).normalized;
         float angle = Vector3.Angle(playerCamera.transform.forward, directionToTarget);
         
         if (angle < evt.lookAngle)
         {
-            // 🔥 Проверяем, есть ли препятствие между камерой и объектом
+            // Проверка препятствия
             if (evt.checkObstacle && IsObstacleBetween(evt.targetObject, evt.obstacleLayer))
             {
-                // Сброс таймера если есть стена
                 if (lookTimers.ContainsKey(evt.targetObject))
                     lookTimers[evt.targetObject] = 0f;
                 return false;
             }
             
-            // Смотрим на объект без препятствий - увеличиваем таймер
             if (!lookTimers.ContainsKey(evt.targetObject))
                 lookTimers[evt.targetObject] = 0f;
             
@@ -144,6 +154,7 @@ public class EventScheduler : MonoBehaviour
             if (lookTimers[evt.targetObject] >= evt.lookDuration)
             {
                 lookTimers[evt.targetObject] = 0f;
+                Debug.Log($"👀 Смотрю на {evt.targetObject.name} (расстояние: {distanceToTarget:F1})");
                 return true;
             }
         }
@@ -156,21 +167,17 @@ public class EventScheduler : MonoBehaviour
         return false;
     }
     
-    // 🔥 Метод проверки препятствия между камерой и объектом
     private bool IsObstacleBetween(GameObject target, LayerMask obstacleLayer)
     {
         Vector3 origin = playerCamera.transform.position;
         Vector3 direction = target.transform.position - origin;
         float distance = direction.magnitude;
         
-        RaycastHit hit;
-        
-        // Если слой не задан, используем всё кроме интерактивных объектов
         LayerMask mask = obstacleLayer.value != -1 ? obstacleLayer : ~LayerMask.GetMask("Interactable");
         
+        RaycastHit hit;
         if (Physics.Raycast(origin, direction, out hit, distance, mask))
         {
-            // Если препятствие не является целевым объектом
             if (hit.collider.gameObject != target)
             {
                 Debug.DrawRay(origin, direction, Color.red, 0.5f);

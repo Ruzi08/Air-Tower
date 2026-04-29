@@ -34,6 +34,9 @@ public class NumberRegulator : MonoBehaviour, Interactable
     [SerializeField] private MonoBehaviour cameraController;
     [SerializeField] private Transform distanceCheckTarget;
 
+    [Header("Electricity")]
+    [SerializeField] private bool requirePower = true;
+
     public System.Action<int> OnValueChanged;
     public int CurrentValue => currentValue;
 
@@ -42,13 +45,17 @@ public class NumberRegulator : MonoBehaviour, Interactable
     private float dragAccumulator;
     private bool wasCursorVisible;
     private CursorLockMode wasCursorLocked;
+    
+    private bool hasPower = true;
+    
+    // 🔥 Для блокировки камеры
+    private FirstPersonController playerController;
+    private bool wasCameraLocked = false;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         SoundRotateButton = GetComponent<SoundRotateButton>();
         
-        // Проверяем наличие компонента
         if (SoundRotateButton == null)
         {
             Debug.LogWarning("SoundRotateButton component not found on the same GameObject. Please add it for random sound playback.", this);
@@ -58,6 +65,37 @@ public class NumberRegulator : MonoBehaviour, Interactable
         currentValue = Mathf.Clamp(currentValue, minValue, maxValue);
         UpdateDisplay();
         UpdateDialRotation();
+        
+        // 🔥 Находим контроллер игрока
+        playerController = FindObjectOfType<FirstPersonController>();
+        
+        if (PowerManager.Instance != null)
+        {
+            hasPower = PowerManager.Instance.HasPower();
+            PowerManager.Instance.OnPowerOut += HandlePowerOut;
+            PowerManager.Instance.OnPowerRestored += HandlePowerRestored;
+        }
+    }
+    
+    void OnDestroy()
+    {
+        if (PowerManager.Instance != null)
+        {
+            PowerManager.Instance.OnPowerOut -= HandlePowerOut;
+            PowerManager.Instance.OnPowerRestored -= HandlePowerRestored;
+        }
+    }
+    
+    private void HandlePowerOut()
+    {
+        hasPower = false;
+        Debug.Log($"{name}: электричество пропало - крутить можно, но цифры не меняются");
+    }
+    
+    private void HandlePowerRestored()
+    {
+        hasPower = true;
+        Debug.Log($"{name}: электричество вернулось - цифры снова меняются");
     }
 
     private void Update()
@@ -75,6 +113,7 @@ public class NumberRegulator : MonoBehaviour, Interactable
 
     public string GetDescription()
     {
+        if (!hasPower && requirePower) return "⚡ Нет электричества! Не меняется";
         return isDragging ? "Отпустите LMB чтобы закончить" : "Крутить регулятор [LMB]";
     }
 
@@ -85,6 +124,9 @@ public class NumberRegulator : MonoBehaviour, Interactable
         wasCursorVisible = Cursor.visible;
         wasCursorLocked = Cursor.lockState;
 
+        // 🔥 БЛОКИРУЕМ КАМЕРУ при начале взаимодействия
+        LockCamera(true);
+
         if (cameraController != null)
             cameraController.enabled = false;
 
@@ -92,16 +134,13 @@ public class NumberRegulator : MonoBehaviour, Interactable
 
         lastMouseX = Input.mousePosition.x;
 
-        // Визуальная обратная связь
         if (dialRenderer != null && activeMaterial != null)
         {
             dialRenderer.material = activeMaterial;
         }
 
-        // Показываем курсор
         Cursor.lockState = CursorLockMode.None;
         dragAccumulator = 0f;
-
 
         while (Input.GetMouseButton(0))
         {
@@ -125,23 +164,27 @@ public class NumberRegulator : MonoBehaviour, Interactable
                 if (change != 0)
                 {
                     dragAccumulator -= rawChange;
+                    
                     int newValue = currentValue + change;
-
-                    // Зацикливание
                     newValue = WrapValue(newValue);
-
-                    if (newValue != currentValue)
+                    
+                    UpdateDialRotationByValue(newValue);
+                    SoundRotateButton?.PlayRandomSound();
+                    
+                    if (!requirePower || hasPower)
                     {
-                        currentValue = newValue;
-                        UpdateDisplay();
-                        UpdateDialRotation();
-                        OnValueChanged?.Invoke(currentValue);
-                        SoundRotateButton.PlayRandomSound();
-
-                        Debug.Log($"Значение: {currentValue}");
+                        if (newValue != currentValue)
+                        {
+                            currentValue = newValue;
+                            UpdateDisplay();
+                            OnValueChanged?.Invoke(currentValue);
+                            Debug.Log($"Значение: {currentValue}");
+                        }
                     }
-
-
+                    else
+                    {
+                        Debug.Log($"{name}: Нет электричества - значение не меняется (осталось {currentValue})");
+                    }
                 }
 
                 lastMouseX = currentMouseX;
@@ -150,21 +193,50 @@ public class NumberRegulator : MonoBehaviour, Interactable
             yield return null;
         }
 
-
-        // Заканчиваем перетаскивание
         StopDragging();
+        
+        UpdateDialRotation();
+        
+        // 🔥 РАЗБЛОКИРУЕМ КАМЕРУ после окончания
+        LockCamera(false);
+    }
+    
+    // 🔥 Метод для блокировки/разблокировки камеры
+    private void LockCamera(bool lockCamera)
+    {
+        if (playerController != null)
+        {
+            if (lockCamera)
+            {
+                playerController.LockCamera();
+                wasCameraLocked = true;
+                Debug.Log("🔒 Камера заблокирована для вращения регулятора");
+            }
+            else
+            {
+                playerController.UnlockCamera();
+                wasCameraLocked = false;
+                Debug.Log("🔓 Камера разблокирована");
+            }
+        }
+    }
+    
+    private void UpdateDialRotationByValue(int value)
+    {
+        if (dialTransform != null)
+        {
+            float angle = (float)value / maxValue * 360f;
+            dialTransform.localRotation = Quaternion.Euler(rotationAxis * angle);
+        }
     }
     
     private void PlayRandomDialSound()
     {
         if (SoundRotateButton != null)
         {
-            // Проигрываем случайный звук из списка
             SoundRotateButton.PlayRandomSound();
         }
-
     }
-
     
     private void UpdateDisplay()
     {
@@ -251,6 +323,7 @@ public class NumberRegulator : MonoBehaviour, Interactable
             dialRenderer.material = hoverMaterial;
         }
     }
+    
     private void OnMouseExit()
     {
         if (!isDragging && dialRenderer != null && defaultMaterial != null)
