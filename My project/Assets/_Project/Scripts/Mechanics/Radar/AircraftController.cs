@@ -29,6 +29,7 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
     private bool isPointerDown = false;
     private float pointerDownTime = 0f;
     [SerializeField] private float holdTimeToEdit = 0.3f;
+    private bool suppressClickAfterHold = false;
 
     private static int lastGeneratedNumber = 0;
     private static System.Random random = new System.Random();
@@ -159,6 +160,12 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
 
     public void OnPointerClick(PointerEventData eventData)
     {
+        if (suppressClickAfterHold)
+        {
+            suppressClickAfterHold = false;
+            return;
+        }
+
         // Вызываем наш метод взаимодействия
         Interact();
     }
@@ -257,6 +264,7 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
     {
         if (isPointerDown && isSelected)
         {
+            suppressClickAfterHold = true;
             RadarManager radar = FindFirstObjectByType<RadarManager>();
             if (radar != null)
             {
