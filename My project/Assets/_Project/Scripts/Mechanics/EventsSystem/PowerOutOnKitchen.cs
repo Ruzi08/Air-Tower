@@ -13,8 +13,10 @@ public class PowerOutOnKitchen : MonoBehaviour
     [Header("Эффекты")]
     public AudioSource switchSound;           // Звук выключателя (опционально)
     
+    [Header("Статус")]
+    public bool isPlayed = false;             // 🔥 Был ли выполнен ивент
+    
     private bool isActive = false;
-    private bool triggered = false;
     private float timeInKitchen = 0f;
     private Transform player;
     
@@ -32,7 +34,7 @@ public class PowerOutOnKitchen : MonoBehaviour
     
     void Update()
     {
-        if (!isActive || triggered) return;
+        if (!isActive || isPlayed) return; // 🔥 Проверяем isPlayed
         
         bool isInKitchen = kitchenZone.bounds.Contains(player.position);
         
@@ -52,20 +54,14 @@ public class PowerOutOnKitchen : MonoBehaviour
     
     private void TriggerPowerOut()
     {
-        triggered = true;
+        isPlayed = true; // 🔥 Отмечаем что ивент выполнен
         
         if (dispatcherLightSwitch != null)
         {
-            // 🔥 Выключаем свет и поворачиваем выключатель
             dispatcherLightSwitch.isOn = false;
-            
-            // 🔥 Запускаем анимацию поворота в OFF
             dispatcherLightSwitch.SetOffState();
-            
-            // Обновляем лампы
             dispatcherLightSwitch.UpdateLampsState();
             
-            // Проигрываем звук щелчка
             if (switchSound != null)
                 switchSound.Play();
             

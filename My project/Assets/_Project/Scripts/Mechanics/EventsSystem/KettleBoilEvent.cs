@@ -10,9 +10,11 @@ public class KettleBoilEvent : MonoBehaviour
     [Header("Что включить")]
     public SimpleCoffeeMaker coffeeMaker;
     
+    [Header("Статус")]
+    public bool isPlayed = false;             // 🔥 Был ли выполнен ивент
+    
     private bool isActive = false;
-    private bool triggered = false;
-    private bool wasInCorridor = false;  // Был ли в коридоре
+    private bool hasBeenInKitchen = false;
     private Transform player;
     
     void Start()
@@ -24,33 +26,32 @@ public class KettleBoilEvent : MonoBehaviour
     void Activate()
     {
         isActive = true;
-        Debug.Log("⚡⚡⚡ Ивент 'Чайник в коридоре' АКТИВИРОВАН! ⚡⚡⚡");
+        Debug.Log("⚡ Ивент 'Чайник в коридоре' активирован");
     }
     
     void Update()
     {
-        if (!isActive || triggered) return;
+        if (!isActive || isPlayed) return; // 🔥 Проверяем isPlayed
         
         bool isInKitchen = kitchenZone.bounds.Contains(player.position);
         bool isInCorridor = corridorZone.bounds.Contains(player.position);
         
-        // Отладка
-        if (isInKitchen) Debug.Log("📍 Игрок на кухне");
-        if (isInCorridor) Debug.Log("📍 Игрок в коридоре");
-        
-        // 🔥 НОВАЯ ЛОГИКА: если игрок в коридоре И НЕ на кухне И мы ещё не триггерили
-        if (isInCorridor && !isInKitchen && !triggered)
+        if (isInKitchen)
         {
-            Debug.Log("🎯 Игрок в коридоре и не на кухне! Запускаем чайник...");
+            hasBeenInKitchen = true;
+            Debug.Log("📍 Игрок был на кухне");
+        }
+        
+        if (hasBeenInKitchen && isInCorridor && !isInKitchen)
+        {
+            Debug.Log("🎯 Игрок был на кухне, теперь в коридоре! Запускаем чайник...");
             TriggerKettleBoil();
         }
     }
     
     private void TriggerKettleBoil()
     {
-        triggered = true;
-        
-        Debug.Log("🔥🔥🔥 TRIGGER KETTLE BOIL ВЫЗВАН! 🔥🔥🔥");
+        isPlayed = true; // 🔥 Отмечаем что ивент выполнен
         
         if (coffeeMaker != null)
         {

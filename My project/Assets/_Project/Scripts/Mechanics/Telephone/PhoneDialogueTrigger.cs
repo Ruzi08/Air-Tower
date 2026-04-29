@@ -7,8 +7,8 @@ public class PhoneDialogueTrigger : MonoBehaviour, Interactable
     public float answerTimeLimit = 8f;
     
     [Header("Анимация телефона (подлёт к камере)")]
-    public Transform phoneMesh;                // Перетащи сюда модель телефона
-    public Transform phoneTargetAnchor;        // 🔥 Якорь (пустой объект перед камерой)
+    public Transform phoneMesh;
+    public Transform phoneTargetAnchor;
     public float phoneAnimationSpeed = 8f;
 
     [Header("Компоненты")]
@@ -26,11 +26,15 @@ public class PhoneDialogueTrigger : MonoBehaviour, Interactable
     private Vector3 originalPhonePos;
     private Quaternion originalPhoneRot;
     private Transform originalParent;
+    
+    private FirstPersonController playerController;
 
     void Start()
     {
         if (gameOverPanel != null)
             gameOverPanel.SetActive(false);
+        
+        playerController = FindObjectOfType<FirstPersonController>();
         
         if (phoneMesh != null)
         {
@@ -39,7 +43,6 @@ public class PhoneDialogueTrigger : MonoBehaviour, Interactable
             originalPhoneRot = phoneMesh.rotation;
         }
         
-        // Если якорь не назначен, создаём его автоматически
         if (phoneTargetAnchor == null)
         {
             GameObject anchor = new GameObject("PhoneAnchor");
@@ -140,35 +143,33 @@ public class PhoneDialogueTrigger : MonoBehaviour, Interactable
     
     private IEnumerator AnimatePhoneToAnchor()
     {
-        FirstPersonController fps = FindObjectOfType<FirstPersonController>();
-        if (fps != null)
-            fps.LockAll();
+        if (playerController != null)
+        {
+            playerController.LockAll();
+            Debug.Log("🔒 Управление заблокировано");
+        }
         
-        // Открепляем телефон и делаем его независимым
         phoneMesh.SetParent(null);
         
         Vector3 startPos = phoneMesh.position;
-        Quaternion startRot = phoneMesh.rotation;
-        
-        // 🔥 Летим к якорю
         Vector3 targetPos = phoneTargetAnchor.position;
         Quaternion targetRot = phoneTargetAnchor.rotation;
+        
+        // Мгновенный поворот в правильное положение
+        phoneMesh.rotation = targetRot;
+        
+        Debug.Log("📱 Телефон мгновенно повёрнут в правильное положение");
         
         float progress = 0f;
         
         while (progress < 1f)
         {
             progress += Time.deltaTime * phoneAnimationSpeed;
-            float smoothProgress = Mathf.SmoothStep(0, 1, progress);
-            
-            phoneMesh.position = Vector3.Lerp(startPos, targetPos, smoothProgress);
-            phoneMesh.rotation = Quaternion.Slerp(startRot, targetRot, smoothProgress);
-            
+            phoneMesh.position = Vector3.Lerp(startPos, targetPos, progress);
             yield return null;
         }
         
         phoneMesh.position = targetPos;
-        phoneMesh.rotation = targetRot;
         
         DialogueManager.Instance.OnPhonePickedUp();
         
@@ -188,29 +189,30 @@ public class PhoneDialogueTrigger : MonoBehaviour, Interactable
     private IEnumerator ReturnPhoneToOriginal()
     {
         Vector3 startPos = phoneMesh.position;
-        Quaternion startRot = phoneMesh.rotation;
+        
+        // 🔥 Мгновенно поворачиваем обратно в исходную ориентацию
+        phoneMesh.rotation = originalPhoneRot;
+        
+        Debug.Log("📱 Телефон мгновенно повёрнут обратно");
         
         float progress = 0f;
         
         while (progress < 1f)
         {
             progress += Time.deltaTime * phoneAnimationSpeed;
-            float smoothProgress = Mathf.SmoothStep(0, 1, progress);
-            
-            phoneMesh.position = Vector3.Lerp(startPos, originalPhonePos, smoothProgress);
-            phoneMesh.rotation = Quaternion.Slerp(startRot, originalPhoneRot, smoothProgress);
-            
+            phoneMesh.position = Vector3.Lerp(startPos, originalPhonePos, progress);
             yield return null;
         }
         
         phoneMesh.position = originalPhonePos;
-        phoneMesh.rotation = originalPhoneRot;
         
         phoneMesh.SetParent(originalParent);
         
-        FirstPersonController fps = FindObjectOfType<FirstPersonController>();
-        if (fps != null)
-            fps.UnlockAll();
+        if (playerController != null)
+        {
+            playerController.UnlockAll();
+            Debug.Log("🔓 Управление разблокировано");
+        }
         
         Debug.Log("📱 Телефон вернулся на место");
     }
@@ -224,6 +226,9 @@ public class PhoneDialogueTrigger : MonoBehaviour, Interactable
         Cursor.visible = true;
         if (CrosshairController.Instance != null)
             CrosshairController.Instance.Hide();
+        
+        if (playerController != null)
+            playerController.UnlockAll();
     }
 
     public string GetDescription()

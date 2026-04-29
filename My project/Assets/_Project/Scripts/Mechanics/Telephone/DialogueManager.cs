@@ -20,7 +20,7 @@ public class DialogueManager : MonoBehaviour
     
     [Header("UI Elements")]
     public GameObject dialoguePanel;
-    public TextMeshProUGUI dialogueText;  // ← только текст диалога
+    public TextMeshProUGUI dialogueText;
     public Button continueButton;
     
     [Header("Typewriter")]
@@ -42,6 +42,7 @@ public class DialogueManager : MonoBehaviour
     
     private FirstPersonController playerController;
     private PlayerInteractor playerInteractor;
+    private CameraHeadBob cameraHeadBob;
     
     private float gameTimer = 0f;
     private bool gameStarted = false;
@@ -65,6 +66,7 @@ public class DialogueManager : MonoBehaviour
         
         playerController = FindObjectOfType<FirstPersonController>();
         playerInteractor = FindObjectOfType<PlayerInteractor>();
+        cameraHeadBob = FindObjectOfType<CameraHeadBob>();
         
         gameStarted = true;
         
@@ -76,19 +78,22 @@ public class DialogueManager : MonoBehaviour
         if (gameStarted)
             gameTimer += Time.deltaTime;
         
-        // Продолжение на любую клавишу или ЛКМ
+        // 🔥 Продолжение диалога на ЛЮБУЮ кнопку/клавишу/клик
         if (isDialogueActive && waitingForInput)
         {
-            if (Input.GetMouseButtonDown(0))
+            // Любая кнопка мыши
+            if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1) || Input.GetMouseButtonDown(2))
             {
-                Debug.Log("🖱️ Продолжение диалога (ЛКМ)");
                 OnContinueClicked();
                 return;
             }
             
-            if (Input.anyKeyDown && !Input.GetKeyDown(KeyCode.Escape))
+            // Любая клавиша на клавиатуре
+            if (Input.anyKeyDown)
             {
-                Debug.Log("🎮 Продолжение диалога (клавиша)");
+                // Исключаем ESC если нужно (опционально)
+                // if (Input.GetKeyDown(KeyCode.Escape)) return;
+                
                 OnContinueClicked();
                 return;
             }
@@ -177,7 +182,6 @@ public class DialogueManager : MonoBehaviour
         
         DialogueEntry entry = currentDialogueList[currentIndex];
         
-        // Показываем только текст (speaker не используем)
         typewriter.StartTyping(entry.text, OnTypingComplete);
         continueButton.interactable = false;
         waitingForInput = false;
@@ -209,7 +213,8 @@ public class DialogueManager : MonoBehaviour
     
     private void OnContinueClicked()
     {
-        if (!waitingForInput) 
+        // Если текст ещё печатается - скипаем
+        if (typewriter.IsTyping)
         {
             typewriter.Skip();
             return;
@@ -241,15 +246,21 @@ public class DialogueManager : MonoBehaviour
         if (playerInteractor != null)
             playerInteractor.enabled = !locked;
         
-        if (playerController == null)
+        if (playerController != null)
         {
-            playerController = FindObjectOfType<FirstPersonController>();
-            if (playerController == null) return;
+            if (locked)
+                playerController.LockAll();
+            else
+                playerController.UnlockAll();
+        }
+        
+        if (cameraHeadBob != null)
+        {
+            cameraHeadBob.enabled = !locked;
         }
         
         if (locked)
         {
-            playerController.LockAll();
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             
@@ -258,7 +269,6 @@ public class DialogueManager : MonoBehaviour
         }
         else
         {
-            playerController.UnlockAll();
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
             

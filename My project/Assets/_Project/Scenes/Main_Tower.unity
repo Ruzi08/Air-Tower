@@ -944,7 +944,7 @@ MonoBehaviour:
   sleepRestoreAmount: 0
   pivoScaleActive: 5
   pivoScaleNormal: 0
-  fullScreenController: {fileID: 0}
+  fullScreenController: {fileID: 338579613}
   gameOverPanel: {fileID: 981735743}
   restartButton: {fileID: 2051413972}
   isOnPhone: 0
@@ -2743,6 +2743,7 @@ GameObject:
   - component: {fileID: 429137920}
   - component: {fileID: 429137919}
   - component: {fileID: 429137918}
+  - component: {fileID: 429137921}
   m_Layer: 0
   m_Name: TEXT
   m_TagString: Untagged
@@ -2913,6 +2914,18 @@ RectTransform:
   m_AnchoredPosition: {x: -0.0058, y: -0.02693}
   m_SizeDelta: {x: 0.006, y: 0.006}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &429137921
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 429137917}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40d93021a4efade41a886c880239b2b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LetterDisplay
 --- !u!1 &446020755
 GameObject:
   m_ObjectHideFlags: 0
@@ -4420,6 +4433,7 @@ GameObject:
   - component: {fileID: 600257764}
   - component: {fileID: 600257763}
   - component: {fileID: 600257762}
+  - component: {fileID: 600257765}
   m_Layer: 0
   m_Name: TEXT
   m_TagString: Untagged
@@ -4590,6 +4604,18 @@ RectTransform:
   m_AnchoredPosition: {x: -0.010428227, y: -0.032364186}
   m_SizeDelta: {x: 0.006, y: 0.006}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &600257765
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 600257761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40d93021a4efade41a886c880239b2b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LetterDisplay
 --- !u!1 &625354548
 GameObject:
   m_ObjectHideFlags: 0
@@ -13197,7 +13223,7 @@ MonoBehaviour:
   - eventName: "\u0423\u0434\u0430\u0440 \u043C\u043E\u043B\u043D\u0438\u0438 + \u043E\u0442\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435
       \u0441\u0432\u0435\u0442\u0430"
     triggerType: 0
-    startTime: 300
+    startTime: 30
     activationDelay: 0
     targetObject: {fileID: 0}
     lookAngle: 15
@@ -13206,6 +13232,7 @@ MonoBehaviour:
     obstacleLayer:
       serializedVersion: 2
       m_Bits: 4294967295
+    maxLookDistance: 5
     zoneCollider: {fileID: 0}
     played: 0
     isActive: 0
@@ -13239,7 +13266,7 @@ MonoBehaviour:
   - eventName: "\u0427\u0430\u0439\u043D\u0438\u043A"
     triggerType: 1
     startTime: 0
-    activationDelay: 600
+    activationDelay: 2
     targetObject: {fileID: 840247477975521839}
     lookAngle: 15
     lookDuration: 1
@@ -13247,6 +13274,7 @@ MonoBehaviour:
     obstacleLayer:
       serializedVersion: 2
       m_Bits: 64
+    maxLookDistance: 2
     zoneCollider: {fileID: 0}
     played: 0
     isActive: 0
@@ -13300,6 +13328,7 @@ MonoBehaviour:
   timeRequired: 5
   dispatcherLightSwitch: {fileID: 1371246363}
   switchSound: {fileID: 0}
+  isPlayed: 0
 --- !u!114 &1283545549
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13312,10 +13341,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5a8897c4da4e6a4191c9947002e9c79, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KettleBoilEvent
-  activationDelay: 1000
+  activationDelay: 1
   kitchenZone: {fileID: 1479400965}
   corridorZone: {fileID: 1523023960}
   coffeeMaker: {fileID: 781076026}
+  isPlayed: 0
 --- !u!64 &1284094333
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -14791,7 +14821,7 @@ MonoBehaviour:
   scheduledCalls:
   - callName: 
     dialogueJsonFile: {fileID: 4900000, guid: e66031aa80ab81d4084aaf0e4a082575, type: 3}
-    startTime: 5
+    startTime: 333
     played: 0
   phone: {fileID: 149758666}
 --- !u!1 &1688907610
@@ -15120,6 +15150,7 @@ GameObject:
   - component: {fileID: 1724061269}
   - component: {fileID: 1724061268}
   - component: {fileID: 1724061267}
+  - component: {fileID: 1724061270}
   m_Layer: 0
   m_Name: TEXT
   m_TagString: Untagged
@@ -15290,6 +15321,18 @@ RectTransform:
   m_AnchoredPosition: {x: -0.0142, y: -0.03663}
   m_SizeDelta: {x: 0.006, y: 0.006}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1724061270
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1724061266}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40d93021a4efade41a886c880239b2b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LetterDisplay
 --- !u!1 &1729881070
 GameObject:
   m_ObjectHideFlags: 0
@@ -15653,6 +15696,7 @@ MonoBehaviour:
   invertRotation: 0
   cameraController: {fileID: 0}
   distanceCheckTarget: {fileID: 0}
+  requirePower: 1
 --- !u!64 &1818401030
 MeshCollider:
   m_ObjectHideFlags: 0
