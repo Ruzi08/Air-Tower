@@ -401,6 +401,7 @@ public class RadarManager : MonoBehaviour
         trajectoryVisual.Rect.localRotation = Quaternion.Euler(0, 0, angle);
 
         trajectoryVisual.Image.color = GetTrajectoryColor(aircraft);
+        trajectoryVisual.Image.raycastTarget = selectedAircraft == aircraft && aircraft.IsSelected;
         trajectoryVisual.Image.gameObject.SetActive(true);
     }
 
@@ -412,6 +413,7 @@ public class RadarManager : MonoBehaviour
         GameObject lineObj = Instantiate(trajectoryLinePrefab, radarArea);
         Image lineImage = lineObj.GetComponent<Image>();
         RectTransform lineRect = lineObj.GetComponent<RectTransform>();
+        TrajectoryLineClickHandler clickHandler = lineObj.GetComponent<TrajectoryLineClickHandler>();
 
         if (lineImage == null || lineRect == null)
         {
@@ -419,6 +421,13 @@ public class RadarManager : MonoBehaviour
             Destroy(lineObj);
             return;
         }
+
+        if (clickHandler == null)
+        {
+            clickHandler = lineObj.AddComponent<TrajectoryLineClickHandler>();
+        }
+
+        clickHandler.Initialize(this);
 
         lineImage.type = Image.Type.Tiled;
         lineImage.sprite = CreateDashedSprite();
@@ -642,6 +651,8 @@ public class RadarManager : MonoBehaviour
 
         editTrajectoryLineImage = lineObj.GetComponent<Image>();
         editTrajectoryLineRect = lineObj.GetComponent<RectTransform>();
+        TrajectoryLineClickHandler clickHandler = lineObj.AddComponent<TrajectoryLineClickHandler>();
+        clickHandler.Initialize(this);
 
         editTrajectoryLineRect.anchorMin = Vector2.zero;
         editTrajectoryLineRect.anchorMax = Vector2.zero;
@@ -653,7 +664,7 @@ public class RadarManager : MonoBehaviour
         editTrajectoryLineImage.sprite = Sprite.Create(tex, new Rect(0, 0, 1, 1), Vector2.one * 0.5f);
 
         editTrajectoryLineImage.color = editLineColor;
-        editTrajectoryLineImage.raycastTarget = false;
+        editTrajectoryLineImage.raycastTarget = true;
         editTrajectoryLineImage.gameObject.SetActive(false);
     }
 
