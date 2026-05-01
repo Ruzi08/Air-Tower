@@ -357,11 +357,6 @@ public class RadarManager : MonoBehaviour
         selectedAircraft = ac;
         ShowZoneFixed(targetZoneImage, targetZoneRect, ac.TargetZoneNorm, targetZoneWidth, targetZoneColor);
 
-        if (infoText != null)
-        {
-            infoText.text = ac.GetDescription();
-        }
-
         SetTrajectoryLineVisible(ac, true);
         UpdateTrajectoryLine(ac);
         
@@ -645,9 +640,6 @@ public class RadarManager : MonoBehaviour
             editTrajectoryLineImage.gameObject.SetActive(false);
             selectedAircraft = null;
             HideAllZones();
-
-            if (infoText != null)
-                infoText.text = "Select aircraft";
         }
         RemoveTrajectoryLine(ac);
         collisionWarningAircrafts.Remove(ac);

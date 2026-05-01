@@ -1,6 +1,8 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using TMPro;
 using static UnityEngine.GraphicsBuffer;
 
 public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IPointerUpHandler, Interactable
@@ -26,6 +28,15 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
     [Header("Audio")]
     public AudioClip aircraftSelectSound;
     private AudioSource audioSource;
+
+    [Header("ID Label")]
+    [SerializeField] private GameObject idLabelPrefab;
+    [SerializeField] private Color idLabelColor = Color.white;
+    [SerializeField] private Vector2 idLabelOffset = new Vector2(0, -15f);
+    [SerializeField] private float idLabelFontSize = 1f;
+
+    private TextMeshProUGUI idLabelText;
+    private RectTransform idLabelRect;
 
     public Vector2 TargetZoneNorm => targetZoneNorm;
     public Vector2 TargetZoneWorld => NormToWorld(targetZoneNorm);
@@ -104,6 +115,8 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
             aircraftImage.color = Color.red; // Яркий цвет для отладки
         }
 
+        CreateIDLabel();
+
         UpdatePosition();
         SetSelected(false);
     }
@@ -133,6 +146,8 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
         Vector2 currentNorm = Vector2.Lerp(startPosNorm, endPosNorm, progress);
         Vector2 newPos = NormToWorld(currentNorm);
         rectTransform.anchoredPosition = newPos;
+
+        UpdateIDLabelPosition();
 
     }
 
@@ -223,6 +238,56 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
         aircraftID = newID;
         gameObject.name = $"Aircraft_{aircraftID}";
         OnIDGenerated?.Invoke(aircraftID);
+    }
+
+    private void CreateIDLabel()
+    {
+        if (idLabelPrefab != null)
+        {
+            GameObject labelObj = Instantiate(idLabelPrefab, transform);
+            idLabelText = labelObj.GetComponent<TextMeshProUGUI>();
+            idLabelRect = labelObj.GetComponent<RectTransform>();
+        }
+        else
+        {
+            // Создаём программно
+            GameObject labelObj = new GameObject("IDLabel", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+            labelObj.transform.SetParent(transform, false);
+
+            idLabelText = labelObj.GetComponent<TextMeshProUGUI>();
+            idLabelRect = labelObj.GetComponent<RectTransform>();
+
+            // Настройка TMP
+            idLabelText.fontSize = idLabelFontSize;
+            idLabelText.alignment = TextAlignmentOptions.Center;
+            idLabelText.raycastTarget = false;
+            idLabelText.fontStyle = FontStyles.Bold;
+
+            // Используем системный шрифт TMP
+            TMP_FontAsset defaultFont = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
+            if (defaultFont != null)
+                idLabelText.font = defaultFont;
+        }
+
+        idLabelRect.anchorMin = new Vector2(0.5f, 0.5f);
+        idLabelRect.anchorMax = new Vector2(0.5f, 0.5f);
+        idLabelRect.pivot = new Vector2(0.5f, 0f);
+        idLabelRect.sizeDelta = new Vector2(60, 20);
+
+        idLabelText.text = aircraftID;
+        idLabelText.color = idLabelColor;
+
+        // Добавляем обводку для читаемости
+        idLabelText.outlineWidth = 0.2f;
+        idLabelText.outlineColor = Color.black;
+    }
+
+    private void UpdateIDLabelPosition()
+    {
+        if (idLabelRect != null)
+        {
+            idLabelRect.anchoredPosition = idLabelOffset;
+        }
     }
 
     private static string GenerateUniqueAircraftID()
