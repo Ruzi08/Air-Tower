@@ -71,6 +71,7 @@ public class RadarManager : MonoBehaviour
 
     [Header("Audio")]
     [SerializeField] private AudioClip aircraftSelectSound;
+    [SerializeField] private FatigueManager fatigueManager;
     private AudioSource audioSource;
     
     private int successfulArrivalsCount = 0;
@@ -110,6 +111,11 @@ public class RadarManager : MonoBehaviour
         if (audioSource == null)
             audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false;
+
+        if (fatigueManager == null)
+        {
+            fatigueManager = FindFirstObjectByType<FatigueManager>();
+        }
     }
     
     public int GetActiveAircraftCount() => activeAircrafts.Count;
@@ -386,10 +392,25 @@ public class RadarManager : MonoBehaviour
 
                 if (a1.WillCollideWith(a2, collisionRadius))
                 {
+                    TriggerCollisionGameOver();
                     Destroy(a1.gameObject);
                     Destroy(a2.gameObject);
+                    return;
                 }
             }
+        }
+    }
+
+    private void TriggerCollisionGameOver()
+    {
+        if (fatigueManager == null)
+        {
+            fatigueManager = FindFirstObjectByType<FatigueManager>();
+        }
+
+        if (fatigueManager != null && !fatigueManager.isGameOver)
+        {
+            fatigueManager.GameOver();
         }
     }
 

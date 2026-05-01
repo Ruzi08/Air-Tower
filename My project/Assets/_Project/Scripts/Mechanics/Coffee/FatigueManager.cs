@@ -242,7 +242,7 @@ public class FatigueManager : MonoBehaviour
         if (fullScreenController != null) fullScreenController.SetBlinkAlpha(0f);
     }
     
-    void GameOver()
+    public void GameOver()
     {
         isGameOver = true;
         StopAll();
