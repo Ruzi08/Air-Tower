@@ -19,6 +19,14 @@ public class PhoneDialogueTrigger : MonoBehaviour, Interactable
     [Header("Game Over")]
     public GameObject gameOverPanel;
 
+    [Header("Radar")]
+    [SerializeField] private RadarManager radarManager;
+
+    public System.Action OnFirstCallEnded;
+
+    private bool isFirstCall = true;
+    private bool hasFirstCallEnded = false;
+
     private bool isRinging = false;
     private Coroutine answerTimerCoroutine;
     private Coroutine phoneMoveCoroutine;
@@ -52,6 +60,9 @@ public class PhoneDialogueTrigger : MonoBehaviour, Interactable
             phoneTargetAnchor.localRotation = Quaternion.Euler(15f, -20f, 5f);
             Debug.Log("📱 Якорь для телефона создан автоматически");
         }
+
+        if (radarManager == null)
+            radarManager = FindObjectOfType<RadarManager>();
     }
 
     public void StartRinging()
@@ -87,6 +98,24 @@ public class PhoneDialogueTrigger : MonoBehaviour, Interactable
             Debug.Log("💀 GAME OVER: не успели ответить!");
             GameOver();
         }
+    }
+
+    private void OnFirstCallComplete()
+    {
+        if (hasFirstCallEnded) return;
+        hasFirstCallEnded = true;
+        isFirstCall = false;
+
+        Debug.Log("📡 ПЕРВЫЙ ЗВОНОК ЗАВЕРШЁН - запускаем спавн самолётов!");
+
+        // Запускаем спавн самолётов
+        if (radarManager != null)
+        {
+            radarManager.StartSpawning();
+        }
+
+        // Вызываем событие для других подписчиков
+        OnFirstCallEnded?.Invoke();
     }
 
     private void StopRinging()
@@ -189,6 +218,11 @@ public class PhoneDialogueTrigger : MonoBehaviour, Interactable
     private IEnumerator ReturnPhoneToOriginal()
     {
         Vector3 startPos = phoneMesh.position;
+
+        if (isFirstCall)
+        {
+            OnFirstCallComplete();
+        }
         
         // 🔥 Мгновенно поворачиваем обратно в исходную ориентацию
         phoneMesh.rotation = originalPhoneRot;
