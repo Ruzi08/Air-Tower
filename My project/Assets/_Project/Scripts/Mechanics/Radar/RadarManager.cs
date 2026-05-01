@@ -27,6 +27,9 @@ public class RadarManager : MonoBehaviour
     [SerializeField] private GameObject aircraftPrefab;
     [SerializeField] private Transform aircraftContainer;
 
+    [Header("Missed Aircraft Panel")]
+    [SerializeField] private MissedAircraftPanel missedPanel;
+
     [Header("Spawn Settings")]
     [SerializeField] private float spawnInterval = 2f;
     [SerializeField] private int maxAircrafts = 10;
@@ -48,6 +51,7 @@ public class RadarManager : MonoBehaviour
     [SerializeField] private GameObject trajectoryLinePrefab;
     [SerializeField] private float trajectoryLineWidth = 2f;
     [SerializeField] private Color trajectoryLineColor = Color.green;
+
 
     [Header("Trajectory Editing")]
     [SerializeField] private Color editLineColor = Color.yellow;
@@ -700,6 +704,11 @@ public class RadarManager : MonoBehaviour
         }
         else
         {
+
+            if (missedPanel != null)
+            {
+                missedPanel.AddMiss();
+            }
         }
     }
 
