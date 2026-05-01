@@ -5,6 +5,8 @@ public class Lamp : MonoBehaviour
     [Header("Настройки лампы")]
     public Light lightSource;
     public bool startOn = true;
+    [SerializeField] bool isAudioMeaning = false;
+    [SerializeField] private GameObject Audio;
     
     private bool isOn;
     private bool hasPower = true;
@@ -53,11 +55,13 @@ public class Lamp : MonoBehaviour
     {
         if (!hasPower) return;
         isOn = true;
+        if(isAudioMeaning) Audio.GetComponent<Sound>().PlaySnd();
         UpdateLight();
     }
     
     public void TurnOff()
     {
+        if(isAudioMeaning) Audio.GetComponent<Sound>().StopSnd();
         isOn = false;
         UpdateLight();
     }

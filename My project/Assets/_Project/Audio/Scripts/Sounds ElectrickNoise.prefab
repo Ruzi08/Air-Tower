@@ -96,8 +96,43 @@ PrefabInstance:
       propertyPath: m_Name
       value: Sounds ElectrickNoise
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: -7298002400581348808, guid: 146391c5ae49f7f46a203309c793326d, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5053627587029014209, guid: 146391c5ae49f7f46a203309c793326d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1129785338854319450}
   m_SourcePrefab: {fileID: 100100000, guid: 146391c5ae49f7f46a203309c793326d, type: 3}
+--- !u!1 &8990588608617466973 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5053627587029014209, guid: 146391c5ae49f7f46a203309c793326d, type: 3}
+  m_PrefabInstance: {fileID: 4244338321602108060}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1129785338854319450
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8990588608617466973}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51997c9cd5c774b4bb08e48b8fb1e55a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ElectricitySound
+  loop: 1
+  destroyed: 0
+  minPitch: 0.8
+  maxPitch: 1.2
+  sounds:
+  - {fileID: 8300000, guid: 7a83299708f4eef44b72d6279ae3a71d, type: 3}
+  isPlaying: 0
+  minVolume: 0
+  maxVolume: 0.4
+  maxDistance: 20
+  fadeSpeed: 2
+  listener: {fileID: 0}
+  volume: 0
+  powerManager: {fileID: 0}
