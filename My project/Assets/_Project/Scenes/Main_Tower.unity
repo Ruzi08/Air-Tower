@@ -16141,9 +16141,9 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d04248bc8d86e7d4186caa6f3636283f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SceneFadeIn
+  m_EditorClassIdentifier: Assembly-CSharp::LoadingFade
   fadeImage: {fileID: 549052955}
-  fadeDuration: 1
+  fadeOutDuration: 7
 --- !u!1 &1818401028
 GameObject:
   m_ObjectHideFlags: 0
