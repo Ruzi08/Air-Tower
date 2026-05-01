@@ -6887,7 +6887,7 @@ MonoBehaviour:
   aircraftContainer: {fileID: 0}
   missedPanel: {fileID: 746786102}
   spawnIntervalMin: 2
-  spawnIntervalMax: 20
+  spawnIntervalMax: 3
   maxAircrafts: 10
   aircraftSpeed: 0.08
   spawnInset: 0.05
@@ -13573,6 +13573,59 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1252410450}
   m_CullTransparentMesh: 1
+--- !u!1 &1255615811
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1255615813}
+  - component: {fileID: 1255615812}
+  m_Layer: 0
+  m_Name: EventAircraftSpawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1255615812
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1255615811}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b2b6e6363b99f44fad759ac7eb8a38c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EventAircraftSpawner
+  spawnTimeSeconds: 1000
+  aircraftID: BA04
+  targetPoint: {x: 0, y: 0.5}
+  targetZoneRadius: 0.05
+  aircraftSpeed: 0.3
+  customStartPoint: {x: 1, y: 1}
+  radarManager: {fileID: 838849188}
+  showDebugLogs: 0
+  hasTriggered: 0
+--- !u!4 &1255615813
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1255615811}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 8.77349, y: 3.77758, z: 59.16245}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1258573556
 GameObject:
   m_ObjectHideFlags: 0
@@ -25278,3 +25331,4 @@ SceneRoots:
   - {fileID: 908784619}
   - {fileID: 886855820}
   - {fileID: 1838011079}
+  - {fileID: 1255615813}

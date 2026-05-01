@@ -22,6 +22,7 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
 
     [Header("Target Zone")]
     [SerializeField] private Vector2 targetZoneNorm;
+    [SerializeField] private bool useFixedZone = false;
 
     [Header("Audio")]
     public AudioClip aircraftSelectSound;
@@ -33,11 +34,22 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
     [SerializeField] private Vector2 idLabelOffset = new Vector2(0, -15f);
     [SerializeField] private float idLabelFontSize = 1f;
 
-    private TextMeshProUGUI idLabelText;
-    private RectTransform idLabelRect;
+    [Header("Special Target Visual")]
+    [SerializeField] private bool useCustomTargetMarker = false; // Использовать ли кастомный маркер
+    [SerializeField] private Color customTargetColor = new Color(0f, 1f, 0f, 0.5f);
+    [SerializeField] private float customTargetRadius = 20f;
+
+    public bool UseCustomTargetMarker => useCustomTargetMarker;
+    public Color CustomTargetColor => customTargetColor;
+    public float CustomTargetRadius => customTargetRadius;
 
     public Vector2 TargetZoneNorm => targetZoneNorm;
     public Vector2 TargetZoneWorld => NormToWorld(targetZoneNorm);
+    public bool UseFixedZone => useFixedZone;
+
+    private TextMeshProUGUI idLabelText;
+    private RectTransform idLabelRect;
+
 
     private bool isPointerDown = false;
     private float pointerDownTime = 0f;
@@ -378,7 +390,30 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
 
     private bool CheckIfHitTarget()
     {
+        if (useFixedZone) // Добавьте этот флаг
+        {
+            // Ивентовый самолёт - проверяем, достиг ли маршрут целевой точки
+            float distance = Vector2.Distance(endPosNorm, targetZoneNorm);
+
+            return distance < 2.05f;
+        }
+
+        // Для всех самолётов проверяем, достигла ли конечная точка целевой зоны
         float threshold = 0.05f;
         return Vector2.Distance(endPosNorm, targetZoneNorm) < threshold;
     }
+
+    public void SetCustomTargetMarker(bool enable, Color? color = null, float? radius = null)
+    {
+        useCustomTargetMarker = enable;
+        if (color.HasValue) customTargetColor = color.Value;
+        if (radius.HasValue) customTargetRadius = radius.Value;
+    }
+
+    public void SetFixedZone(bool fixedZone)
+    {
+        useFixedZone = fixedZone;
+    }
 }
+
+
