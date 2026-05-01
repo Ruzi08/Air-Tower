@@ -2076,7 +2076,7 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 6de683939daa8be43a0cc628d85867a0, type: 3}
   isPlaying: 0
   minVolume: 0.005
-  maxVolume: 1
+  maxVolume: 0.5
   maxDistance: 20
   fadeSpeed: 5
   listener: {fileID: 1723329501}
@@ -6822,7 +6822,7 @@ MonoBehaviour:
   targetZoneColor: {r: 0, g: 1, b: 0, a: 0.4}
   targetZoneWidth: 0.12
   edgeDetectionEpsilon: 0.001
-  initialMaxAircrafts: 1
+  initialMaxAircrafts: 10
   advancedMaxAircrafts: 3
   successfulArrivalsToAdvance: 3
   aircraftSelectSound: {fileID: 8300000, guid: ce9cd2951bb61864e8355a575a7b28c6, type: 3}
@@ -19742,11 +19742,11 @@ PrefabInstance:
       objectReference: {fileID: 1723329501}
     - target: {fileID: 4003582044609929310, guid: 7a5a9ce3b91658341938b09b915d8e37, type: 3}
       propertyPath: minVolume
-      value: 0.1
+      value: 0.01
       objectReference: {fileID: 0}
     - target: {fileID: 4003582044609929310, guid: 7a5a9ce3b91658341938b09b915d8e37, type: 3}
       propertyPath: maxDistance
-      value: 6
+      value: 5.15
       objectReference: {fileID: 0}
     - target: {fileID: 4003582044609929310, guid: 7a5a9ce3b91658341938b09b915d8e37, type: 3}
       propertyPath: offRotation.x
@@ -19779,6 +19779,14 @@ PrefabInstance:
     - target: {fileID: 4991043649515138235, guid: 7a5a9ce3b91658341938b09b915d8e37, type: 3}
       propertyPath: m_Name
       value: LighSwitchDispetcher
+      objectReference: {fileID: 0}
+    - target: {fileID: 8827480452646249041, guid: 7a5a9ce3b91658341938b09b915d8e37, type: 3}
+      propertyPath: Priority
+      value: 128
+      objectReference: {fileID: 0}
+    - target: {fileID: 8827480452646249041, guid: 7a5a9ce3b91658341938b09b915d8e37, type: 3}
+      propertyPath: MaxDistance
+      value: 5.2189255
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
