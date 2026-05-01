@@ -29,6 +29,7 @@ public class InteractiveBook : MonoBehaviour, Interactable
     public float animationSpeed = 8f;
     
     private FirstPersonController playerController;
+    private CameraHeadBob cameraHeadBob; // 🔥 Для отключения тряски
     private Transform playerCamera;
     private Vector3 originalPosition;
     private Quaternion originalRotation;
@@ -36,7 +37,6 @@ public class InteractiveBook : MonoBehaviour, Interactable
     private bool isOpen = false;
     private bool isAnimating = false;
     
-    // Ссылка на прицел
     private CrosshairController crosshair;
     
     void Start()
@@ -46,13 +46,13 @@ public class InteractiveBook : MonoBehaviour, Interactable
         {
             playerController = player.GetComponent<FirstPersonController>();
             playerCamera = player.GetComponentInChildren<Camera>().transform;
+            cameraHeadBob = player.GetComponentInChildren<CameraHeadBob>(); // 🔥 Находим скрипт тряски
         }
         
         originalPosition = transform.position;
         originalRotation = transform.rotation;
         originalParent = transform.parent;
         
-        // Находим прицел
         crosshair = FindObjectOfType<CrosshairController>();
         
         if (pages == null || pages.Length == 0)
@@ -90,7 +90,13 @@ public class InteractiveBook : MonoBehaviour, Interactable
         if (playerController != null)
             playerController.LockAll();
         
-        // Скрываем прицел
+        // 🔥 Отключаем тряску камеры
+        if (cameraHeadBob != null)
+        {
+            cameraHeadBob.enabled = false;
+            Debug.Log("🔇 HeadBob отключен (книга открыта)");
+        }
+        
         if (crosshair != null)
             crosshair.gameObject.SetActive(false);
         
@@ -156,7 +162,13 @@ public class InteractiveBook : MonoBehaviour, Interactable
         if (playerController != null)
             playerController.UnlockAll();
         
-        // Показываем прицел обратно
+        // 🔥 Включаем тряску камеры обратно
+        if (cameraHeadBob != null)
+        {
+            cameraHeadBob.enabled = true;
+            Debug.Log("🔊 HeadBob включен (книга закрыта)");
+        }
+        
         if (crosshair != null)
             crosshair.gameObject.SetActive(true);
     }

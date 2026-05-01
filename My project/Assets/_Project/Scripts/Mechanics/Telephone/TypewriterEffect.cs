@@ -5,7 +5,7 @@ using TMPro;
 public class TypewriterEffect : MonoBehaviour
 {
     public float charsPerSecond = 40f;
-    public float minSkipProgress = 0.3f; // 30% текста должно напечататься
+    public float minSkipProgress = 0.3f; // 30% текста должно напечататься чтобы можно было скипнуть
     
     private TextMeshProUGUI textComponent;
     private Coroutine typingCoroutine;
@@ -13,6 +13,7 @@ public class TypewriterEffect : MonoBehaviour
     private System.Action onCompleteCallback;
     private bool canSkip = false;
     private bool isSkipping = false;
+    private bool skipRequested = false;
     
     void Awake()
     {
@@ -21,21 +22,12 @@ public class TypewriterEffect : MonoBehaviour
     
     void Update()
     {
-        // 🔥 Скип на ЛЮБУЮ кнопку/клавишу/клик, но только если canSkip = true (>=30%)
-        if (IsTyping && canSkip && !isSkipping)
+        // Скип только если можно скипнуть (>=30%) И нажата ЛКМ или Пробел
+        if (IsTyping && canSkip && !skipRequested)
         {
-            // Любая кнопка мыши
-            if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1) || Input.GetMouseButtonDown(2))
+            if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space))
             {
                 Skip();
-                return;
-            }
-            
-            // Любая клавиша на клавиатуре
-            if (Input.anyKeyDown)
-            {
-                Skip();
-                return;
             }
         }
     }
@@ -49,6 +41,7 @@ public class TypewriterEffect : MonoBehaviour
         onCompleteCallback = onComplete;
         canSkip = false;
         isSkipping = false;
+        skipRequested = false;
         typingCoroutine = StartCoroutine(TypeText());
     }
     
@@ -60,8 +53,7 @@ public class TypewriterEffect : MonoBehaviour
         
         for (int i = 0; i <= fullText.Length; i++)
         {
-            // Если скипнули - выводим весь текст и выходим
-            if (isSkipping)
+            if (skipRequested)
             {
                 textComponent.text = fullText;
                 break;
@@ -69,7 +61,6 @@ public class TypewriterEffect : MonoBehaviour
             
             textComponent.text = fullText.Substring(0, i);
             
-            // 🔥 Разрешаем скип после достижения порога
             if (!canSkip && i >= minSkipLength)
             {
                 canSkip = true;
@@ -79,14 +70,25 @@ public class TypewriterEffect : MonoBehaviour
             yield return new WaitForSeconds(delay);
         }
         
-        // Финальная установка текста
         if (textComponent.text != fullText)
             textComponent.text = fullText;
         
         typingCoroutine = null;
-        onCompleteCallback?.Invoke();
+        
+        // 🔥 ВАЖНО: вызываем onComplete ТОЛЬКО если текст допечатался, а не скипнулся
+        if (!skipRequested)
+        {
+            onCompleteCallback?.Invoke();
+        }
+        else
+        {
+            // При скипе сразу переходим к следующей реплике
+            onCompleteCallback?.Invoke();
+        }
+        
         onCompleteCallback = null;
         canSkip = false;
+        skipRequested = false;
         isSkipping = false;
     }
     
@@ -94,9 +96,10 @@ public class TypewriterEffect : MonoBehaviour
     {
         if (!IsTyping) return;
         if (!canSkip) return;
+        if (skipRequested) return;
         
-        isSkipping = true;
-        Debug.Log("⏩ Диалог пропущен");
+        skipRequested = true;
+        Debug.Log("⏩ Анимация печати пропущена");
     }
     
     public void ForceComplete()
@@ -110,6 +113,7 @@ public class TypewriterEffect : MonoBehaviour
             onCompleteCallback = null;
         }
         canSkip = false;
+        skipRequested = false;
         isSkipping = false;
     }
     

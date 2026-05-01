@@ -21,7 +21,6 @@ public class DialogueManager : MonoBehaviour
     [Header("UI Elements")]
     public GameObject dialoguePanel;
     public TextMeshProUGUI dialogueText;
-    public Button continueButton;
     
     [Header("Typewriter")]
     public TypewriterEffect typewriter;
@@ -48,6 +47,9 @@ public class DialogueManager : MonoBehaviour
     private bool gameStarted = false;
     private TextAsset pendingDialogue = null;
     
+    // Защита от двойного клика
+    private bool canAdvance = true;
+    
     public event Action OnDialogueStart;
     public event Action OnDialogueEnd;
     
@@ -62,7 +64,6 @@ public class DialogueManager : MonoBehaviour
     void Start()
     {
         dialoguePanel.SetActive(false);
-        continueButton.onClick.AddListener(OnContinueClicked);
         
         playerController = FindObjectOfType<FirstPersonController>();
         playerInteractor = FindObjectOfType<PlayerInteractor>();
@@ -78,26 +79,38 @@ public class DialogueManager : MonoBehaviour
         if (gameStarted)
             gameTimer += Time.deltaTime;
         
-        // 🔥 Продолжение диалога на ЛЮБУЮ кнопку/клавишу/клик
-        if (isDialogueActive && waitingForInput)
+        // 🔥 ЛЮБАЯ КЛАВИША или ЛКМ для продолжения
+        if (isDialogueActive && waitingForInput && canAdvance)
         {
-            // Любая кнопка мыши
-            if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1) || Input.GetMouseButtonDown(2))
+            // Левая кнопка мыши
+            if (Input.GetMouseButtonDown(0))
             {
-                OnContinueClicked();
+                AdvanceDialogue();
+                StartCoroutine(AdvanceCooldown());
                 return;
             }
             
-            // Любая клавиша на клавиатуре
+            // ЛЮБАЯ клавиша на клавиатуре
             if (Input.anyKeyDown)
             {
-                // Исключаем ESC если нужно (опционально)
-                // if (Input.GetKeyDown(KeyCode.Escape)) return;
+                // Игнорируем модификаторы и ESC (опционально)
+                if (Input.GetKeyDown(KeyCode.Escape)) return;
+                if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift)) return;
+                if (Input.GetKeyDown(KeyCode.LeftAlt) || Input.GetKeyDown(KeyCode.RightAlt)) return;
+                if (Input.GetKeyDown(KeyCode.LeftControl) || Input.GetKeyDown(KeyCode.RightControl)) return;
                 
-                OnContinueClicked();
+                AdvanceDialogue();
+                StartCoroutine(AdvanceCooldown());
                 return;
             }
         }
+    }
+    
+    private IEnumerator AdvanceCooldown()
+    {
+        canAdvance = false;
+        yield return new WaitForSeconds(0.15f);
+        canAdvance = true;
     }
     
     private IEnumerator CheckScheduledCalls()
@@ -182,9 +195,9 @@ public class DialogueManager : MonoBehaviour
         
         DialogueEntry entry = currentDialogueList[currentIndex];
         
-        typewriter.StartTyping(entry.text, OnTypingComplete);
-        continueButton.interactable = false;
         waitingForInput = false;
+        
+        typewriter.StartTyping(entry.text, OnTypingComplete);
         
         if (autoProgressCoroutine != null)
             StopCoroutine(autoProgressCoroutine);
@@ -192,7 +205,6 @@ public class DialogueManager : MonoBehaviour
     
     private void OnTypingComplete()
     {
-        continueButton.interactable = true;
         waitingForInput = true;
         
         DialogueEntry entry = currentDialogueList[currentIndex];
@@ -207,19 +219,22 @@ public class DialogueManager : MonoBehaviour
         yield return new WaitForSeconds(delay);
         if (waitingForInput && isDialogueActive)
         {
-            OnContinueClicked();
+            AdvanceDialogue();
         }
     }
     
-    private void OnContinueClicked()
+    private void AdvanceDialogue()
     {
-        // Если текст ещё печатается - скипаем
+        if (!isDialogueActive) return;
+        
+        // Если текст ещё печатается - скипаем анимацию
         if (typewriter.IsTyping)
         {
             typewriter.Skip();
             return;
         }
         
+        // Только когда текст полностью напечатан - переходим на следующую реплику
         currentIndex++;
         ShowCurrentLine();
     }
@@ -237,6 +252,8 @@ public class DialogueManager : MonoBehaviour
         {
             phone.telephoneSound.PlayHangUp();
         }
+        
+        canAdvance = true;
     }
     
     private void LockPlayerControls(bool locked)
