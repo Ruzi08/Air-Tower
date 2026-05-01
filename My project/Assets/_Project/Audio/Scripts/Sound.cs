@@ -137,7 +137,8 @@ public class Sound : MonoBehaviour
         AudioSrc.volume = initialVolume;
         CurrentVolume = initialVolume;
         TargetVolume = initialVolume;
-
+        
+        isPlaying = true;
         AudioSrc.Play();
     }
 
@@ -165,12 +166,15 @@ public class Sound : MonoBehaviour
             return;
         }
         PlaySnd(sounds[0], loop: loop, volume: volume, destroyed: destroyed, p1: minPitch, p2: maxPitch);
+        isPlaying = true;
     }
 
     public virtual void StopSnd()
     {
+        
         if (AudioSrc != null && AudioSrc.isPlaying)
             AudioSrc.Stop();
+        isPlaying = false;
     }
 
     public void ChangeVolume(float newVolume)
