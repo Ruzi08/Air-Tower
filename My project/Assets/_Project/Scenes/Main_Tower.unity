@@ -6886,7 +6886,8 @@ MonoBehaviour:
   aircraftPrefab: {fileID: 7273810107570899390, guid: c3afc975553d57447b32848f29886f1b, type: 3}
   aircraftContainer: {fileID: 0}
   missedPanel: {fileID: 746786102}
-  spawnInterval: 2
+  spawnIntervalMin: 2
+  spawnIntervalMax: 20
   maxAircrafts: 10
   aircraftSpeed: 0.08
   spawnInset: 0.05

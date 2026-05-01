@@ -31,7 +31,8 @@ public class RadarManager : MonoBehaviour
     [SerializeField] private MissedAircraftPanel missedPanel;
 
     [Header("Spawn Settings")]
-    [SerializeField] private float spawnInterval = 2f;
+    [SerializeField] private float spawnIntervalMin = 2f;
+    [SerializeField] private float spawnIntervalMax = 8f;
     [SerializeField] private int maxAircrafts = 10;
     [SerializeField] private float aircraftSpeed = 120f;
     [SerializeField] private float spawnInset = 0.05f;
@@ -76,7 +77,9 @@ public class RadarManager : MonoBehaviour
     [SerializeField] private AudioClip aircraftSelectSound;
     [SerializeField] private FatigueManager fatigueManager;
     private AudioSource audioSource;
+
     
+
     private int successfulArrivalsCount = 0;
     private bool isAdvancedMode = false;
 
@@ -102,6 +105,7 @@ public class RadarManager : MonoBehaviour
     private readonly HashSet<AircraftController> criticalCollisionAircrafts = new HashSet<AircraftController>();
     private AircraftController selectedAircraft;
     private float spawnTimer;
+    private float currentSpawnInterval;
     private bool isInitialized = false;
 
     private Image destinationZoneImage;
@@ -153,6 +157,8 @@ public class RadarManager : MonoBehaviour
         successfulArrivalsCount = 0;
         isAdvancedMode = false;
 
+        currentSpawnInterval = Random.Range(spawnIntervalMin, spawnIntervalMax);
+
         if (aircraftContainer == null)
         {
             InitializeContainer();
@@ -198,11 +204,14 @@ public class RadarManager : MonoBehaviour
     {
         if (activeAircrafts.Count >= maxAircrafts) return;
 
+
         spawnTimer += Time.deltaTime;
-        if (spawnTimer >= spawnInterval)
+        
+        if (spawnTimer >= currentSpawnInterval)
         {
             spawnTimer = 0f;
             SpawnAircraft();
+            currentSpawnInterval = Random.Range(spawnIntervalMin, spawnIntervalMax);
         }
     }
 
