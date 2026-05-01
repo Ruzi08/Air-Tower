@@ -137,12 +137,19 @@ public class LightSwitch : Sound, Interactable
         UpdateLampsState();
         UpdateVisual();
         
+        // 🔥 Звук при ручном нажатии
+        PlaySwitchSound();
+        
+        Debug.Log($"Выключатель {(isOn ? "включён" : "выключен")}, свет: {(hasPower && isOn ? "горит" : "не горит")}");
+    }
+    
+    // 🔥 Метод для воспроизведения звука (общий для ручного нажатия и ивентов)
+    private void PlaySwitchSound()
+    {
         if (sounds != null && sounds.Length > 0 && sounds[0] != null)
         {
             PlaySnd(sounds[0], volume: maxVolume, p1: minPitch, p2: maxPitch);
         }
-        
-        Debug.Log($"Выключатель {(isOn ? "включён" : "выключен")}, свет: {(hasPower && isOn ? "горит" : "не горит")}");
     }
     
     public void UpdateLampsState()
@@ -192,7 +199,6 @@ public class LightSwitch : Sound, Interactable
         UpdateVisual();
     }
     
-    // 🔥 НОВЫЙ МЕТОД для принудительного выключения с анимацией
     public void SetOffState()
     {
         if (isAnimating) return;
@@ -205,6 +211,40 @@ public class LightSwitch : Sound, Interactable
         UpdateLampsState();
         
         Debug.Log($"{name}: принудительно выключен через SetOffState()");
+    }
+    
+    // 🔥 Метод для включения с анимацией (для ивентов)
+    public void TurnOnWithAnimation()
+    {
+        if (isAnimating) return;
+        
+        isOn = true;
+        targetRotation = originalRotation;
+        isAnimating = true;
+        UpdateVisual();
+        UpdateLampsState();
+        
+        // 🔥 Тот же звук что и при ручном нажатии
+        PlaySwitchSound();
+        
+        Debug.Log($"{name}: включен с анимацией");
+    }
+    
+    // 🔥 Метод для выключения с анимацией (для ивентов)
+    public void TurnOffWithAnimation()
+    {
+        if (isAnimating) return;
+        
+        isOn = false;
+        targetRotation = originalRotation * Quaternion.Euler(pressedRotation);
+        isAnimating = true;
+        UpdateVisual();
+        UpdateLampsState();
+        
+        // 🔥 Тот же звук что и при ручном нажатии
+        PlaySwitchSound();
+        
+        Debug.Log($"{name}: выключен с анимацией");
     }
     
     public string GetDescription()

@@ -1663,6 +1663,7 @@ GameObject:
   - component: {fileID: 330585547}
   - component: {fileID: 330585548}
   - component: {fileID: 330585549}
+  - component: {fileID: 330585550}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -1826,6 +1827,23 @@ MonoBehaviour:
   runningBobbingAmount: 0.08
   characterController: {fileID: 1723329498}
   runningSpeed: 7
+--- !u!114 &330585550
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 330585543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bc7f46dc943d5604487d354ad470ed76, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraZoom
+  normalFOV: 60
+  zoomedFOV: 40
+  zoomSpeed: 8
+  zoomKey: 324
+  holdToZoom: 1
 --- !u!1 &338579610
 GameObject:
   m_ObjectHideFlags: 0
@@ -2135,7 +2153,7 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 6de683939daa8be43a0cc628d85867a0, type: 3}
   isPlaying: 0
   minVolume: 0.005
-  maxVolume: 1
+  maxVolume: 0.5
   maxDistance: 20
   fadeSpeed: 5
   listener: {fileID: 1723329501}
@@ -6522,6 +6540,7 @@ MonoBehaviour:
   isBoiling: 0
   isWaterHot: 0
   isCoffeeReady: 0
+  isPouringAndDrinking: 0
   pourPoint: {fileID: 892936420}
   pourRotation: {x: 0, y: 0, z: 0}
   kettleFlySpeed: 1
@@ -6540,11 +6559,13 @@ MonoBehaviour:
   bulbIdleMaterial: {fileID: -8274133419916619345, guid: d6ecbc8fd7d1f944f9daf4d94e1fe1ce, type: 3}
   bulbBoilingMaterial: {fileID: -2813467912831258332, guid: d6ecbc8fd7d1f944f9daf4d94e1fe1ce, type: 3}
   bulbReadyMaterial: {fileID: -6629797300637803691, guid: d6ecbc8fd7d1f944f9daf4d94e1fe1ce, type: 3}
+  bulbNoPowerMaterial: {fileID: 0}
   bulbMaterialIndex: 2
   clickSound: {fileID: 0}
   boilSound: {fileID: 289076443}
   pourSound: {fileID: 389258746}
   drinkSound: {fileID: 0}
+  noPowerSound: {fileID: 0}
 --- !u!1 &785369646
 GameObject:
   m_ObjectHideFlags: 0
@@ -6928,7 +6949,7 @@ MonoBehaviour:
   targetZoneColor: {r: 0, g: 1, b: 0, a: 0.4}
   targetZoneWidth: 0.12
   edgeDetectionEpsilon: 0.001
-  initialMaxAircrafts: 1
+  initialMaxAircrafts: 10
   advancedMaxAircrafts: 3
   successfulArrivalsToAdvance: 3
   aircraftSelectSound: {fileID: 8300000, guid: ce9cd2951bb61864e8355a575a7b28c6, type: 3}
@@ -13688,6 +13709,7 @@ GameObject:
   - component: {fileID: 1283545546}
   - component: {fileID: 1283545548}
   - component: {fileID: 1283545549}
+  - component: {fileID: 1283545550}
   m_Layer: 0
   m_Name: EventScheduler
   m_TagString: Untagged
@@ -13781,7 +13803,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-  autoStart: 1
+  autoStart: 0
 --- !u!4 &1283545547
 Transform:
   m_ObjectHideFlags: 0
@@ -13797,6 +13819,7 @@ Transform:
   m_Children:
   - {fileID: 1479400964}
   - {fileID: 1523023959}
+  - {fileID: 1497393970}
   m_Father: {fileID: 908784619}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1283545548
@@ -13834,6 +13857,33 @@ MonoBehaviour:
   corridorZone: {fileID: 1523023960}
   coffeeMaker: {fileID: 781076026}
   isPlayed: 0
+--- !u!114 &1283545550
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1283545545}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3bddfb67f14478e4494dcce13a557246, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DispatcherLightFlickerEvent
+  activationDelay: 5
+  kitchenZone: {fileID: 1479400965}
+  corridorZone: {fileID: 1523023960}
+  stopZone: {fileID: 1497393971}
+  dispatcherLightSwitch: {fileID: 1371246363}
+  dispatcherLights:
+  - {fileID: 2269300974524063853}
+  - {fileID: 1984203066}
+  flickerMinInterval: 0.2
+  flickerMaxInterval: 0.6
+  pauseBeforeFlicker: 1
+  flickSound: {fileID: 0}
+  powerBuzzSound: {fileID: 0}
+  isPlayed: 0
+  isFlickeringActive: 0
 --- !u!64 &1284094333
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -14673,6 +14723,59 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
+--- !u!1 &1497393969
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1497393970}
+  - component: {fileID: 1497393971}
+  m_Layer: 0
+  m_Name: ColiderStop
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1497393970
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1497393969}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.218, y: -1.217, z: -3.463}
+  m_LocalScale: {x: 1.081874, y: -6.2850065, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1283545547}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &1497393971
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1497393969}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!64 &1497896070
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -15497,7 +15600,7 @@ MonoBehaviour:
   scheduledCalls:
   - callName: 
     dialogueJsonFile: {fileID: 4900000, guid: e66031aa80ab81d4084aaf0e4a082575, type: 3}
-    startTime: 333
+    startTime: 1
     played: 0
   phone: {fileID: 149758666}
 --- !u!1 &1688907610
@@ -18420,7 +18523,7 @@ GameObject:
   - component: {fileID: 1984203065}
   - component: {fileID: 1984203067}
   m_Layer: 0
-  m_Name: Point.002 (8)
+  m_Name: DispetcherSvet2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -20103,6 +20206,18 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4003582044609929310, guid: 7a5a9ce3b91658341938b09b915d8e37, type: 3}
+      propertyPath: listener
+      value: 
+      objectReference: {fileID: 1723329501}
+    - target: {fileID: 4003582044609929310, guid: 7a5a9ce3b91658341938b09b915d8e37, type: 3}
+      propertyPath: minVolume
+      value: 0.01
+      objectReference: {fileID: 0}
+    - target: {fileID: 4003582044609929310, guid: 7a5a9ce3b91658341938b09b915d8e37, type: 3}
+      propertyPath: maxDistance
+      value: 5.15
+      objectReference: {fileID: 0}
+    - target: {fileID: 4003582044609929310, guid: 7a5a9ce3b91658341938b09b915d8e37, type: 3}
       propertyPath: maxPitch
       value: 1
       objectReference: {fileID: 0}
@@ -20141,6 +20256,14 @@ PrefabInstance:
     - target: {fileID: 4991043649515138235, guid: 7a5a9ce3b91658341938b09b915d8e37, type: 3}
       propertyPath: m_Name
       value: LighSwitchDispetcher
+      objectReference: {fileID: 0}
+    - target: {fileID: 8827480452646249041, guid: 7a5a9ce3b91658341938b09b915d8e37, type: 3}
+      propertyPath: Priority
+      value: 128
+      objectReference: {fileID: 0}
+    - target: {fileID: 8827480452646249041, guid: 7a5a9ce3b91658341938b09b915d8e37, type: 3}
+      propertyPath: MaxDistance
+      value: 5.2189255
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -21390,7 +21513,7 @@ GameObject:
   - component: {fileID: 15496247057840838}
   - component: {fileID: 1988924691}
   m_Layer: 0
-  m_Name: Point.009
+  m_Name: DispetcherSvet1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

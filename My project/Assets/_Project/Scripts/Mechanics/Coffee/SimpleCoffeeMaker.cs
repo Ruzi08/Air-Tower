@@ -11,6 +11,7 @@ public class SimpleCoffeeMaker : MonoBehaviour, Interactable
     public bool isBoiling = false;
     public bool isWaterHot = false;
     public bool isCoffeeReady = false;
+    public bool isPouringAndDrinking = false;
     
     [Header("=== АНИМАЦИЯ ЧАЙНИКА ===")]
     public Transform pourPoint;
@@ -39,6 +40,7 @@ public class SimpleCoffeeMaker : MonoBehaviour, Interactable
     public Material bulbIdleMaterial;
     public Material bulbBoilingMaterial;
     public Material bulbReadyMaterial;
+    public Material bulbNoPowerMaterial; // 🔥 Материал когда нет электричества
     public int bulbMaterialIndex = 1;
     
     [Header("=== ЗВУКИ ===")]
@@ -46,6 +48,7 @@ public class SimpleCoffeeMaker : MonoBehaviour, Interactable
     public SimpleSound boilSound;
     public SimpleSound pourSound;
     public SimpleSound drinkSound;
+    public SimpleSound noPowerSound; // 🔥 Звук при попытке включить без электричества
     
     private Vector3 kettleOriginalPosition;
     private Quaternion kettleOriginalRotation;
@@ -57,6 +60,8 @@ public class SimpleCoffeeMaker : MonoBehaviour, Interactable
     private bool isPouring = false;
     private bool isDrinking = false;
     private FirstPersonController playerController;
+    
+    private bool hasPower = true; // 🔥 Состояние электричества
     
     void Start()
     {
@@ -90,12 +95,75 @@ public class SimpleCoffeeMaker : MonoBehaviour, Interactable
         if (pourParticles != null)
             pourParticles.Stop();
         
-        SetBulbMaterial(bulbIdleMaterial);
+        // 🔥 Подписываемся на события электричества
+        if (PowerManager.Instance != null)
+        {
+            hasPower = PowerManager.Instance.HasPower();
+            PowerManager.Instance.OnPowerOut += HandlePowerOut;
+            PowerManager.Instance.OnPowerRestored += HandlePowerRestored;
+        }
+        
+        UpdateVisualByPower();
+    }
+    
+    void OnDestroy()
+    {
+        if (PowerManager.Instance != null)
+        {
+            PowerManager.Instance.OnPowerOut -= HandlePowerOut;
+            PowerManager.Instance.OnPowerRestored -= HandlePowerRestored;
+        }
+    }
+    
+    private void HandlePowerOut()
+    {
+        hasPower = false;
+        
+        // 🔥 Если чайник кипел - прерываем кипение
+        if (isBoiling)
+        {
+            isBoiling = false;
+            boilTimer = 0;
+            if (steamParticles != null)
+                steamParticles.Stop();
+            if (boilSound != null)
+                boilSound.Stop();
+        }
+        
+        UpdateVisualByPower();
+        Debug.Log("🔌 Чайник: электричество отключено");
+    }
+    
+    private void HandlePowerRestored()
+    {
+        hasPower = true;
+        UpdateVisualByPower();
+        Debug.Log("⚡ Чайник: электричество включено");
+    }
+    
+    private void UpdateVisualByPower()
+    {
+        if (!hasPower && bulbNoPowerMaterial != null)
+        {
+            SetBulbMaterial(bulbNoPowerMaterial);
+        }
+        else if (!isBoiling && !isWaterHot && !isCoffeeReady)
+        {
+            SetBulbMaterial(bulbIdleMaterial);
+        }
+        else if (isBoiling)
+        {
+            SetBulbMaterial(bulbBoilingMaterial);
+        }
+        else if (isWaterHot || isCoffeeReady)
+        {
+            SetBulbMaterial(bulbReadyMaterial);
+        }
     }
     
     void Update()
     {
-        if (isBoiling)
+        if (isBoiling && hasPower) // 🔥 Кипятим только если есть электричество
         {
             boilTimer += Time.deltaTime;
             if (boilTimer >= boilTime)
@@ -111,7 +179,7 @@ public class SimpleCoffeeMaker : MonoBehaviour, Interactable
                 
                 SetBulbMaterial(bulbReadyMaterial);
                 
-                Debug.Log("🔥 Чайник закипел!");
+                Debug.Log("🔥 Чайник закипел! Теперь можно нажать чтобы налить и выпить");
             }
         }
     }
@@ -133,18 +201,28 @@ public class SimpleCoffeeMaker : MonoBehaviour, Interactable
     
     public void Interact()
     {
-        if (isPouring || isDrinking) return;
+        if (isPouring || isDrinking || isPouringAndDrinking) return;
+        
+        // 🔥 Проверка электричества
+        if (!hasPower)
+        {
+            if (noPowerSound != null)
+                noPowerSound.Play();
+            Debug.Log("🔌 Нет электричества! Чайник не работает.");
+            return;
+        }
         
         if (clickSound != null)
             clickSound.Play();
         
+        // Новая логика: 2 клика
         if (isCoffeeReady)
         {
-            StartCoroutine(DrinkCoffee());
+            StartCoroutine(PourAndDrink());
         }
-        else if (isWaterHot && !isCoffeeReady)
+        else if (isWaterHot && !isCoffeeReady && !isPouringAndDrinking)
         {
-            StartCoroutine(PourCoffee());
+            StartCoroutine(PourAndDrink());
         }
         else if (!isBoiling && !isWaterHot && !isCoffeeReady)
         {
@@ -152,49 +230,47 @@ public class SimpleCoffeeMaker : MonoBehaviour, Interactable
         }
     }
     
-    // 🔥 ПУБЛИЧНЫЙ МЕТОД для запуска кипячения (можно вызывать из других скриптов)
-   public void StartBoiling()
-{
-    Debug.Log($"🔥 StartBoiling вызван! Текущее состояние: isBoiling={isBoiling}, isWaterHot={isWaterHot}, isCoffeeReady={isCoffeeReady}");
-    
-    if (isBoiling || isWaterHot || isCoffeeReady)
+    public void StartBoiling()
     {
-        Debug.Log("❌ Не могу запустить кипение - не подходящее состояние");
-        return;
-    }
-    
-    isBoiling = true;
-    boilTimer = 0;
-    
-    if (steamParticles != null)
-    {
-        steamParticles.Play();
-        Debug.Log("✅ Steam particles запущены");
-    }
-    else
-    {
-        Debug.Log("❌ steamParticles = null");
-    }
-    
-    SetBulbMaterial(bulbBoilingMaterial);
-    
-    if (boilSound != null)
-    {
-        boilSound.Play();
-        Debug.Log("✅ Звук кипения запущен");
-    }
-    else
-    {
-        Debug.Log("❌ boilSound = null");
-    }
-    
-    Debug.Log("🫖 Чайник начал кипеть!");
-}
-    
-    IEnumerator PourCoffee()
-    {
-        isPouring = true;
+        if (isBoiling || isWaterHot || isCoffeeReady) return;
         
+        // 🔥 Проверка электричества
+        if (!hasPower)
+        {
+            if (noPowerSound != null)
+                noPowerSound.Play();
+            Debug.Log("🔌 Нет электричества! Чайник не может кипеть.");
+            return;
+        }
+        
+        isBoiling = true;
+        boilTimer = 0;
+        
+        if (steamParticles != null)
+            steamParticles.Play();
+        
+        SetBulbMaterial(bulbBoilingMaterial);
+        
+        if (boilSound != null)
+            boilSound.Play();
+        
+        Debug.Log("🫖 Чайник начал кипеть!");
+    }
+    
+    IEnumerator PourAndDrink()
+    {
+        isPouringAndDrinking = true;
+        
+        // Блокируем управление
+        if (playerController != null)
+            playerController.LockAll();
+        
+        // Отключаем тряску камеры
+        CameraHeadBob headBob = FindObjectOfType<CameraHeadBob>();
+        if (headBob != null)
+            headBob.enabled = false;
+        
+        // Анимация чайника к кружке
         float t = 0;
         Vector3 startPos = transform.position;
         Quaternion startRot = transform.rotation;
@@ -243,19 +319,10 @@ public class SimpleCoffeeMaker : MonoBehaviour, Interactable
         
         isWaterHot = false;
         isCoffeeReady = true;
-        isPouring = false;
         
-        Debug.Log("☕ Кофе заварен! Нажми на кружку");
-    }
-    
-    IEnumerator DrinkCoffee()
-    {
-        if (isDrinking) yield break;
-        isDrinking = true;
+        Debug.Log("☕ Кофе налит! Начинаю пить...");
         
-        if (playerController != null)
-            playerController.LockAll();
-        
+        // Выпивание
         if (cup != null && cupAnchor != null)
         {
             Transform originalParent = cup.transform.parent;
@@ -266,7 +333,7 @@ public class SimpleCoffeeMaker : MonoBehaviour, Interactable
             Collider cupCollider = cup.GetComponent<Collider>();
             if (cupCollider != null) cupCollider.enabled = false;
             
-            float t = 0;
+            t = 0;
             Vector3 startPosWorld = cup.transform.position;
             Vector3 targetPosWorld = cupAnchor.position;
             
@@ -304,30 +371,33 @@ public class SimpleCoffeeMaker : MonoBehaviour, Interactable
             if (cupCollider != null) cupCollider.enabled = true;
         }
         
-        SetBulbMaterial(bulbIdleMaterial);
-        
         if (fatigueManager != null)
             fatigueManager.RestoreWakeness(coffeeRestoreAmount);
         
         if (cupRenderer != null && emptyMaterial != null)
             cupRenderer.material = emptyMaterial;
         
+        SetBulbMaterial(bulbIdleMaterial);
+        
         isCoffeeReady = false;
-        isDrinking = false;
+        isPouringAndDrinking = false;
         
         if (playerController != null)
             playerController.UnlockAll();
+        
+        if (headBob != null)
+            headBob.enabled = true;
         
         Debug.Log($"🥤 Кофе выпит! +{coffeeRestoreAmount}% бодрости");
     }
     
     public string GetDescription()
     {
-        if (isDrinking) return "🥤 Пью кофе...";
-        if (isPouring) return "☕ Наливаю кофе...";
-        if (isCoffeeReady) return "☕ Выпить кофе";
-        if (isWaterHot) return "☕ Налить кофе";
+        if (!hasPower) return "🔌 Нет электричества...";
+        if (isPouringAndDrinking) return "☕ Наливаю и пью...";
         if (isBoiling) return $"🫖 Кипит... {(boilTime - boilTimer):F0} сек";
+        if (isWaterHot) return "☕ Налить кофе и выпить";
+        if (isCoffeeReady) return "☕ Выпить кофе";
         return "🫖 Вскипятить чайник";
     }
 }
