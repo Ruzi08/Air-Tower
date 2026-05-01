@@ -111,6 +111,8 @@ public class LampManager : MonoBehaviour
             if (greenBlinkTimer <= 0f)
             {
                 isGreenBlinking = false;
+                greenLamp.TurnOff();
+                lampsnd.StopGreen();
             }
         }
     }

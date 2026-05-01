@@ -1,87 +1,69 @@
 using Unity.VisualScripting;
 using UnityEngine;
 
-public class LampSound : Sound
+public class LampSound : MonoBehaviour
 {
     [Header("Audio Sources")]
-    [SerializeField] private AudioSource yellowSource;
-    [SerializeField] private AudioSource redSource;
-    [SerializeField] private AudioSource greenSource; // Отдельный для зелёного
-
-    [Header("Audio Clips")]
-    [SerializeField] private AudioClip yellowLoop;
-    [SerializeField] private AudioClip redLoop;
-    [SerializeField] private AudioClip greenOneShot;
+    [SerializeField] private Sound yellowSource;
+    [SerializeField] private Sound redSource;
+    [SerializeField] private Sound greenSource; // Отдельный для зелёного
 
     void Start()
     {
         // Создаём источники, если не назначены
         if (yellowSource == null)
         {
-            yellowSource = gameObject.AddComponent<AudioSource>();
-            yellowSource.loop = true;
-            yellowSource.playOnAwake = false;
-            yellowSource.volume = volume;
+            yellowSource = gameObject.AddComponent<Sound>();
         }
-
         if (redSource == null)
         {
-            redSource = gameObject.AddComponent<AudioSource>();
-            redSource.loop = true;
-            redSource.playOnAwake = false;
-            redSource.volume = volume;
+            redSource = gameObject.AddComponent<Sound>();
         }
-
         if (greenSource == null)
         {
-            greenSource = gameObject.AddComponent<AudioSource>();
-            greenSource.loop = false;
-            greenSource.playOnAwake = false;
-            greenSource.volume = volume;
+            greenSource = gameObject.AddComponent<Sound>();
         }
     }
 
     public void PlayYellowLoop()
     {
-        if (yellowSource != null && yellowLoop != null && !yellowSource.isPlaying)
+        if (yellowSource != null)
         {
-            yellowSource.clip = yellowLoop;
-            yellowSource.Play();
+            yellowSource.PlaySnd();
         }
     }
 
     public void StopYellow()
     {
-        if (yellowSource != null && yellowSource.isPlaying)
-            yellowSource.Stop();
+        if (yellowSource != null)
+            yellowSource.StopSnd();
     }
 
     public void PlayRedLoop()
     {
-        if (redSource != null && redLoop != null && !redSource.isPlaying)
+        if (redSource != null)
         {
-            redSource.clip = redLoop;
-            redSource.Play();
+            redSource.PlaySnd();
         }
     }
 
     public void StopRed()
     {
-        if (redSource != null && redSource.isPlaying)
-            redSource.Stop();
+        if (redSource != null)
+            redSource.StopSnd();
     }
 
     public void PlayGreenOneShot()
     {
-        if (greenSource != null && greenOneShot != null)
+        if (greenSource != null)
         {
-            greenSource.PlayOneShot(greenOneShot);
+            greenSource.PlaySnd();
         }
     }
 
     public void StopGreen()
     {
-        if (greenSource != null && greenSource.isPlaying)
-            greenSource.Stop();
+        if (greenSource != null)
+            greenSource.StopSnd();
     }
 }

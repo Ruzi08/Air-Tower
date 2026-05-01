@@ -5,10 +5,11 @@ public class Sound : MonoBehaviour
     [Header("Settings")]
     public bool loop;
     public bool destroyed;
+    public bool isPlayingOnStart = true;
     public float minPitch = 0.85f;
     public float maxPitch = 1.2f;
     public AudioClip[] sounds;
-    public bool isPlaying;              // Можно не использовать, оставлено для совместимости
+    public bool isPlaying;              // Теперь обновляется в PlaySnd/StopSnd
     public float minVolume = 0f;
     public float maxVolume = 1f;
     public float maxDistance = 20f;
@@ -40,6 +41,7 @@ public class Sound : MonoBehaviour
         volume = maxVolume;
         CurrentVolume = minVolume;
         TargetVolume = minVolume;
+        isPlaying = false;   // Явная инициализация
     }
 
     protected virtual void Start()
@@ -49,8 +51,11 @@ public class Sound : MonoBehaviour
             Debug.LogWarning("Sound.Start() requires sounds[0] to be assigned before playback can begin.", this);
             return;
         }
-        // Старт с автоматическим учётом расстояния и видимости
-        PlaySnd(sounds[0], loop: loop, volume: volume, destroyed: destroyed, p1: minPitch, p2: maxPitch);
+
+        if (isPlayingOnStart)
+        {
+            PlaySnd(sounds[0], loop: loop, volume: volume, destroyed: destroyed, p1: minPitch, p2: maxPitch);
+        }
     }
 
     protected virtual void Update()
@@ -117,7 +122,7 @@ public class Sound : MonoBehaviour
     }
 
     // ----------------------------------------------------------------------
-    //  ГЛАВНОЕ ИСПРАВЛЕНИЕ: PlaySnd больше не игнорирует расстояние/видимость
+    //  Основной метод воспроизведения (с параметрами)
     // ----------------------------------------------------------------------
     public virtual void PlaySnd(AudioClip clip, float volume = 1f, bool destroyed = false, float p1 = 0.85f, float p2 = 1.2f, bool loop = false)
     {
@@ -139,6 +144,7 @@ public class Sound : MonoBehaviour
         TargetVolume = initialVolume;
 
         AudioSrc.Play();
+        isPlaying = true;   // Флаг обновлён
     }
 
     // Вспомогательный метод для вычисления громкости прямо сейчас
@@ -171,6 +177,7 @@ public class Sound : MonoBehaviour
     {
         if (AudioSrc != null && AudioSrc.isPlaying)
             AudioSrc.Stop();
+        isPlaying = false;   // Флаг обновлён
     }
 
     public void ChangeVolume(float newVolume)

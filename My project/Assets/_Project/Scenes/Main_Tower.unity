@@ -2067,7 +2067,6 @@ GameObject:
   m_Component:
   - component: {fileID: 366947301}
   - component: {fileID: 366947302}
-  - component: {fileID: 366947304}
   - component: {fileID: 366947303}
   m_Layer: 0
   m_Name: LampManager
@@ -2109,7 +2108,7 @@ MonoBehaviour:
   radarManager: {fileID: 838849188}
   yellowBlinkInterval: 0.5
   redBlinkInterval: 0.31
-  greenBlinkDuration: 0.3
+  greenBlinkDuration: 1.3
   lampsnd: {fileID: 366947303}
 --- !u!114 &366947303
 MonoBehaviour:
@@ -2123,121 +2122,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cb741ee4ac63a44a9eb9bf199c5e401, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LampSound
-  loop: 0
-  destroyed: 0
-  minPitch: 0.85
-  maxPitch: 1.2
-  sounds: []
-  isPlaying: 0
-  minVolume: 0
-  maxVolume: 0.5
-  maxDistance: 20
-  fadeSpeed: 2
-  listener: {fileID: 1723329501}
-  volume: 0.5
-  yellowSource: {fileID: 1829481817}
-  redSource: {fileID: 2064453857}
-  greenSource: {fileID: 1748639985}
-  yellowLoop: {fileID: 8300000, guid: 6ca767403edb27f4db57f84825ab9af8, type: 3}
-  redLoop: {fileID: 8300000, guid: 6de683939daa8be43a0cc628d85867a0, type: 3}
-  greenOneShot: {fileID: 8300000, guid: a41c354b6f9b56f40b462209070cd5e7, type: 3}
---- !u!82 &366947304
-AudioSource:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 366947300}
-  m_Enabled: 1
-  serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: -4697775348444791383, guid: 839800bfac5eadc4c8a820971871d2e5, type: 2}
-  m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 0}
-  m_PlayOnAwake: 0
-  m_Volume: 0.35
-  m_Pitch: 1
-  Loop: 0
-  Mute: 0
-  Spatialize: 0
-  SpatializePostEffects: 0
-  Priority: 128
-  DopplerLevel: 1
-  MinDistance: 1.549397
-  MaxDistance: 2.881416
-  Pan2D: 0
-  rolloffMode: 0
-  BypassEffects: 0
-  BypassListenerEffects: 0
-  BypassReverbZones: 0
-  rolloffCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  panLevelCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  spreadCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  reverbZoneMixCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
+  yellowSource: {fileID: 1829481818}
+  redSource: {fileID: 2064453858}
+  greenSource: {fileID: 1748639986}
 --- !u!1 &373440482
 GameObject:
   m_ObjectHideFlags: 0
@@ -3677,6 +3564,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ThunderSound
   loop: 0
   destroyed: 0
+  isPlayingOnStart: 1
   minPitch: 0.8
   maxPitch: 1.2
   sounds:
@@ -4990,6 +4878,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ElectricityFixSound
   loop: 0
   destroyed: 0
+  isPlayingOnStart: 1
   minPitch: 0.9
   maxPitch: 1.1
   sounds:
@@ -5484,6 +5373,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LetterSound
   loop: 0
   destroyed: 0
+  isPlayingOnStart: 1
   minPitch: 0.95
   maxPitch: 1.1
   sounds:
@@ -16472,6 +16362,7 @@ GameObject:
   - component: {fileID: 1748639982}
   - component: {fileID: 1748639984}
   - component: {fileID: 1748639985}
+  - component: {fileID: 1748639986}
   m_Layer: 0
   m_Name: Green_Lamp
   m_TagString: Untagged
@@ -16589,7 +16480,7 @@ AudioSource:
   Priority: 128
   DopplerLevel: 1
   MinDistance: 1
-  MaxDistance: 500
+  MaxDistance: 7.1831565
   Pan2D: 0
   rolloffMode: 0
   BypassEffects: 0
@@ -16664,6 +16555,32 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &1748639986
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1748639980}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 074038b9d61847e4ab95e9a39ca080d7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Sound
+  loop: 0
+  destroyed: 0
+  isPlayingOnStart: 0
+  minPitch: 1
+  maxPitch: 1
+  sounds:
+  - {fileID: 8300000, guid: a41c354b6f9b56f40b462209070cd5e7, type: 3}
+  isPlaying: 0
+  minVolume: 0.01
+  maxVolume: 0.5
+  maxDistance: 10
+  fadeSpeed: 2
+  listener: {fileID: 1723329501}
+  volume: 0.5
 --- !u!1 &1818401028
 GameObject:
   m_ObjectHideFlags: 0
@@ -16823,6 +16740,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SoundRotateButton
   loop: 0
   destroyed: 0
+  isPlayingOnStart: 1
   minPitch: 0.8
   maxPitch: 1.1
   sounds:
@@ -17111,6 +17029,7 @@ GameObject:
   - component: {fileID: 1829481814}
   - component: {fileID: 1829481816}
   - component: {fileID: 1829481817}
+  - component: {fileID: 1829481818}
   m_Layer: 0
   m_Name: Yellow_Lamp
   m_TagString: Untagged
@@ -17228,7 +17147,7 @@ AudioSource:
   Priority: 128
   DopplerLevel: 1
   MinDistance: 1
-  MaxDistance: 500
+  MaxDistance: 6.924881
   Pan2D: 0
   rolloffMode: 0
   BypassEffects: 0
@@ -17303,6 +17222,32 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &1829481818
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1829481812}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 074038b9d61847e4ab95e9a39ca080d7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Sound
+  loop: 1
+  destroyed: 0
+  isPlayingOnStart: 0
+  minPitch: 1
+  maxPitch: 1
+  sounds:
+  - {fileID: 8300000, guid: 6ca767403edb27f4db57f84825ab9af8, type: 3}
+  isPlaying: 0
+  minVolume: 0.01
+  maxVolume: 0.5
+  maxDistance: 10
+  fadeSpeed: 2
+  listener: {fileID: 1723329501}
+  volume: 0.5
 --- !u!1 &1833920279 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 7150782695381425189, guid: b025e24017fd0a8478068f7130bfee58, type: 3}
@@ -19353,6 +19298,7 @@ GameObject:
   - component: {fileID: 2064453854}
   - component: {fileID: 2064453856}
   - component: {fileID: 2064453857}
+  - component: {fileID: 2064453858}
   m_Layer: 0
   m_Name: Red_Lamp
   m_TagString: Untagged
@@ -19470,7 +19416,7 @@ AudioSource:
   Priority: 128
   DopplerLevel: 1
   MinDistance: 1
-  MaxDistance: 500
+  MaxDistance: 7.062027
   Pan2D: 0
   rolloffMode: 0
   BypassEffects: 0
@@ -19545,6 +19491,32 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &2064453858
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2064453852}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 074038b9d61847e4ab95e9a39ca080d7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Sound
+  loop: 1
+  destroyed: 0
+  isPlayingOnStart: 0
+  minPitch: 1
+  maxPitch: 1
+  sounds:
+  - {fileID: 8300000, guid: 6de683939daa8be43a0cc628d85867a0, type: 3}
+  isPlaying: 0
+  minVolume: 0.01
+  maxVolume: 0.5
+  maxDistance: 10
+  fadeSpeed: 2
+  listener: {fileID: 1723329501}
+  volume: 0.5
 --- !u!64 &2066816852
 MeshCollider:
   m_ObjectHideFlags: 0
