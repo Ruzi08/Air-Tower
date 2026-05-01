@@ -5,15 +5,15 @@ public class DispatcherLightFlickerEvent : MonoBehaviour
 {
     [Header("Настройки активации")]
     public float activationDelay = 90f;
-    public Collider kitchenZone;
-    public Collider corridorZone;
+    public Collider kitchenZone;                 // Зона кухни
+    public Collider corridorZone;                // Зона коридора
+    public Collider stopZone;                    // 🔥 Зона, после пересечения которой моргание прекращается
     
     [Header("Что контролировать")]
     public LightSwitch dispatcherLightSwitch;
     public Light[] dispatcherLights;
     
     [Header("Настройки моргания")]
-    public int flickerCount = 5;
     public float flickerMinInterval = 0.2f;
     public float flickerMaxInterval = 0.6f;
     public float pauseBeforeFlicker = 1f;
@@ -24,11 +24,12 @@ public class DispatcherLightFlickerEvent : MonoBehaviour
     
     [Header("Статус")]
     public bool isPlayed = false;
+    public bool isFlickeringActive = false;      // 🔥 Активно ли сейчас моргание
     
     private bool isActive = false;
     private bool hasBeenInKitchen = false;
     private Transform player;
-    private bool isFlickering = false;
+    private Coroutine flickerCoroutine;
     private bool[] originalLightsState;
     private bool originalSwitchState;
     
@@ -46,10 +47,20 @@ public class DispatcherLightFlickerEvent : MonoBehaviour
     
     void Update()
     {
-        if (!isActive || isPlayed || isFlickering) return;
+        if (!isActive || isPlayed) return;
         
         bool isInKitchen = kitchenZone.bounds.Contains(player.position);
         bool isInCorridor = corridorZone.bounds.Contains(player.position);
+        bool isInStopZone = stopZone != null && stopZone.bounds.Contains(player.position);
+        
+        // 🔥 Если игрок зашёл в стоп-зону - останавливаем моргание
+        if (isInStopZone && isFlickeringActive)
+        {
+            Debug.Log("🛑 Игрок зашёл в стоп-зону! Останавливаем моргание...");
+            StopFlickering();
+            isPlayed = true;
+            return;
+        }
         
         if (isInKitchen)
         {
@@ -57,17 +68,20 @@ public class DispatcherLightFlickerEvent : MonoBehaviour
             Debug.Log("📍 Игрок был на кухне");
         }
         
-        if (hasBeenInKitchen && isInCorridor && !isInKitchen)
+        // Запускаем моргание только если ещё не запущено и игрок вышел в коридор
+        if (!isFlickeringActive && hasBeenInKitchen && isInCorridor && !isInKitchen)
         {
-            Debug.Log("🎭 Игрок вышел в коридор! Начинаем представление...");
-            StartCoroutine(StartFlickerShow());
+            Debug.Log("🎭 Игрок вышел в коридор! Начинаем бесконечное представление...");
+            StartFlickering();
         }
     }
     
-    private IEnumerator StartFlickerShow()
+    private void StartFlickering()
     {
-        isPlayed = true;
-        isFlickering = true;
+        if (flickerCoroutine != null)
+            StopCoroutine(flickerCoroutine);
+        
+        isFlickeringActive = true;
         
         // Сохраняем исходное состояние
         if (dispatcherLightSwitch != null)
@@ -85,47 +99,50 @@ public class DispatcherLightFlickerEvent : MonoBehaviour
             }
         }
         
+        flickerCoroutine = StartCoroutine(InfiniteFlickerCoroutine());
+    }
+    
+    private void StopFlickering()
+    {
+        if (flickerCoroutine != null)
+        {
+            StopCoroutine(flickerCoroutine);
+            flickerCoroutine = null;
+        }
+        
+        isFlickeringActive = false;
+        
+        // Восстанавливаем исходное состояние (опционально)
+        // SetLightsState(true);
+        // if (dispatcherLightSwitch != null)
+        // {
+        //     dispatcherLightSwitch.TurnOnWithAnimation();
+        //     dispatcherLightSwitch.UpdateLampsState();
+        // }
+        
+        Debug.Log("🎭 Моргание остановлено!");
+    }
+    
+    private IEnumerator InfiniteFlickerCoroutine()
+    {
+        // Звук "игр с электричеством"
         if (powerBuzzSound != null)
             powerBuzzSound.Play();
         
         yield return new WaitForSeconds(pauseBeforeFlicker);
         
-        // Моргание
-        for (int i = 0; i < flickerCount; i++)
+        // Бесконечное моргание
+        while (isFlickeringActive)
         {
             float interval = Random.Range(flickerMinInterval, flickerMaxInterval);
             yield return StartCoroutine(FlickerOnce(interval));
+            yield return new WaitForSeconds(Random.Range(0.1f, 0.3f));
         }
-        
-        // Финальное состояние
-        bool finalState = Random.value > 0.5f;
-        
-        if (dispatcherLightSwitch != null)
-        {
-            if (finalState)
-            {
-                // 🔥 Включаем с анимацией
-                dispatcherLightSwitch.TurnOnWithAnimation();
-                Debug.Log("💡 Свет в диспетчерской остался ВКЛЮЧЁН");
-            }
-            else
-            {
-                // 🔥 Выключаем с анимацией
-                dispatcherLightSwitch.TurnOffWithAnimation();
-                Debug.Log("💡 Свет в диспетчерской остался ВЫКЛЮЧЕН");
-            }
-            dispatcherLightSwitch.UpdateLampsState();
-        }
-        
-        SetLightsState(finalState);
-        
-        isFlickering = false;
-        Debug.Log("🎭 Представление закончено!");
     }
     
     private IEnumerator FlickerOnce(float duration)
     {
-        // 🔥 ВЫКЛЮЧАЕМ с анимацией
+        // Выключаем
         if (dispatcherLightSwitch != null)
         {
             dispatcherLightSwitch.TurnOffWithAnimation();
@@ -137,7 +154,7 @@ public class DispatcherLightFlickerEvent : MonoBehaviour
         
         yield return new WaitForSeconds(duration);
         
-        // 🔥 ВКЛЮЧАЕМ с анимацией
+        // Включаем
         if (dispatcherLightSwitch != null)
         {
             dispatcherLightSwitch.TurnOnWithAnimation();
@@ -146,8 +163,6 @@ public class DispatcherLightFlickerEvent : MonoBehaviour
         
         if (flickSound != null)
             flickSound.Play();
-        
-        yield return new WaitForSeconds(Random.Range(0.1f, 0.3f));
     }
     
     private void SetLightsState(bool state)
@@ -162,11 +177,31 @@ public class DispatcherLightFlickerEvent : MonoBehaviour
         }
     }
     
-    public void ManualTrigger()
+    // Метод для ручного запуска
+    public void ManualStart()
     {
-        if (!isPlayed)
+        if (!isPlayed && !isFlickeringActive)
         {
-            StartCoroutine(StartFlickerShow());
+            StartFlickering();
+        }
+    }
+    
+    // Метод для ручной остановки
+    public void ManualStop()
+    {
+        if (isFlickeringActive)
+        {
+            StopFlickering();
+            isPlayed = true;
+        }
+    }
+    
+    private void OnDrawGizmos()
+    {
+        if (stopZone != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireCube(stopZone.bounds.center, stopZone.bounds.size);
         }
     }
 }

@@ -13672,6 +13672,7 @@ Transform:
   m_Children:
   - {fileID: 1479400964}
   - {fileID: 1523023959}
+  - {fileID: 1497393970}
   m_Father: {fileID: 908784619}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1283545548
@@ -13721,20 +13722,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3bddfb67f14478e4494dcce13a557246, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DispatcherLightFlickerEvent
-  activationDelay: 2
+  activationDelay: 5
   kitchenZone: {fileID: 1479400965}
   corridorZone: {fileID: 1523023960}
+  stopZone: {fileID: 1497393971}
   dispatcherLightSwitch: {fileID: 1371246363}
   dispatcherLights:
   - {fileID: 2269300974524063853}
   - {fileID: 1984203066}
-  flickerCount: 10
   flickerMinInterval: 0.2
   flickerMaxInterval: 0.6
   pauseBeforeFlicker: 1
   flickSound: {fileID: 0}
   powerBuzzSound: {fileID: 0}
   isPlayed: 0
+  isFlickeringActive: 0
 --- !u!64 &1284094333
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -14501,6 +14503,59 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
+--- !u!1 &1497393969
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1497393970}
+  - component: {fileID: 1497393971}
+  m_Layer: 0
+  m_Name: ColiderStop
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1497393970
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1497393969}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.218, y: -1.217, z: -3.463}
+  m_LocalScale: {x: 1.081874, y: -6.2850065, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1283545547}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &1497393971
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1497393969}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!64 &1497896070
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -15240,7 +15295,7 @@ MonoBehaviour:
   scheduledCalls:
   - callName: 
     dialogueJsonFile: {fileID: 4900000, guid: e66031aa80ab81d4084aaf0e4a082575, type: 3}
-    startTime: 333
+    startTime: 1
     played: 0
   phone: {fileID: 149758666}
 --- !u!1 &1688907610

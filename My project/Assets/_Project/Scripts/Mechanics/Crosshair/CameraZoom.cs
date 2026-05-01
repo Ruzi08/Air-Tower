@@ -10,6 +10,7 @@ public class CameraZoom : MonoBehaviour
     
     [Header("Опционально")]
     public bool holdToZoom = true; // Зажимать или переключатель
+    public bool disableDuringDialogue = true; // 🔥 Отключать зум во время диалога
     
     private Camera playerCamera;
     private bool isZoomed = false;
@@ -26,6 +27,19 @@ public class CameraZoom : MonoBehaviour
     
     void Update()
     {
+        // 🔥 Если диалог активен - не обрабатываем зум
+        if (disableDuringDialogue && DialogueManager.Instance != null && DialogueManager.Instance.IsDialogueActive)
+        {
+            // Если был зазумлен - возвращаем обратно
+            if (isZoomed || zoomToggle)
+            {
+                isZoomed = false;
+                zoomToggle = false;
+                playerCamera.fieldOfView = normalFOV;
+            }
+            return;
+        }
+        
         if (holdToZoom)
         {
             if (Input.GetKeyDown(zoomKey))
@@ -51,5 +65,10 @@ public class CameraZoom : MonoBehaviour
         isZoomed = false;
         zoomToggle = false;
         playerCamera.fieldOfView = normalFOV;
+    }
+    
+    public bool IsZoomed()
+    {
+        return isZoomed;
     }
 }
