@@ -33,6 +33,8 @@ public class RadarManager : MonoBehaviour
     [SerializeField] private float minSpeed = 0.1f;
     [SerializeField] private float maxSpeed = 0.5f;
     [SerializeField] private float spawnInset = 0.05f;
+    [SerializeField] private float spawnClearRadius = 0.08f;
+    [SerializeField] private int spawnPointSearchAttempts = 20;
 
     [Header("Collision")]
     [SerializeField] private float collisionRadius = 0.04f;
@@ -229,8 +231,11 @@ public class RadarManager : MonoBehaviour
             return;
         }
 
-        int startSide = Random.Range(0, 4);
-        Vector2 start = GetEdgePointOnSide(startSide, spawnInset);
+        if (!TryGetSpawnStartPoint(out int startSide, out Vector2 start))
+        {
+            Destroy(go);
+            return;
+        }
 
         Vector2 targetZone = GetRandomEdgePoint();
         while ((int)GetEdgeSide(targetZone) == startSide) targetZone = GetRandomEdgePoint();
@@ -255,6 +260,72 @@ public class RadarManager : MonoBehaviour
         activeAircrafts.Add(ac);
         CreateTrajectoryLineForAircraft(ac);
         OnAircraftSpawned?.Invoke();
+    }
+
+    private bool TryGetSpawnStartPoint(out int startSide, out Vector2 start)
+    {
+        startSide = -1;
+        start = Vector2.zero;
+
+        if (radarArea == null)
+        {
+            return false;
+        }
+
+        int attempts = Mathf.Max(1, spawnPointSearchAttempts);
+        for (int i = 0; i < attempts; i++)
+        {
+            int candidateSide = Random.Range(0, 4);
+            Vector2 candidateStart = GetEdgePointOnSide(candidateSide, spawnInset);
+
+            if (!IsSpawnPointClear(candidateStart))
+            {
+                continue;
+            }
+
+            startSide = candidateSide;
+            start = candidateStart;
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool IsSpawnPointClear(Vector2 candidateStart)
+    {
+        if (radarArea == null)
+        {
+            return false;
+        }
+
+        float minDistance = Mathf.Max(0f, spawnClearRadius) * radarArea.rect.width;
+        if (minDistance <= 0f)
+        {
+            return true;
+        }
+
+        Vector2 candidateWorld = NormalizedToRadarPosition(candidateStart);
+
+        foreach (var aircraft in activeAircrafts)
+        {
+            if (aircraft == null)
+            {
+                continue;
+            }
+
+            if (Vector2.Distance(candidateWorld, aircraft.CurrentPosition) < minDistance)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private Vector2 NormalizedToRadarPosition(Vector2 normalizedPoint)
+    {
+        Vector2 size = radarArea.rect.size;
+        return new Vector2(normalizedPoint.x * size.x, normalizedPoint.y * size.y);
     }
 
     private Vector2 GetRandomEdgePoint()

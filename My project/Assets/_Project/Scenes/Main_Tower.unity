@@ -6638,10 +6638,12 @@ MonoBehaviour:
   aircraftPrefab: {fileID: 7273810107570899390, guid: c3afc975553d57447b32848f29886f1b, type: 3}
   aircraftContainer: {fileID: 0}
   spawnInterval: 2
-  maxAircrafts: 3
+  maxAircrafts: 20
   minSpeed: 0.008
   maxSpeed: 0.008
   spawnInset: 0.05
+  spawnClearRadius: 0.2
+  spawnPointSearchAttempts: 20
   collisionRadius: 0.04
   predictCollisionForWholeRoute: 1
   collisionPredictionTime: 5
@@ -6660,7 +6662,7 @@ MonoBehaviour:
   targetZoneColor: {r: 0, g: 1, b: 0, a: 0.4}
   targetZoneWidth: 0.12
   edgeDetectionEpsilon: 0.001
-  initialMaxAircrafts: 1
+  initialMaxAircrafts: 20
   advancedMaxAircrafts: 3
   successfulArrivalsToAdvance: 3
   aircraftSelectSound: {fileID: 8300000, guid: ce9cd2951bb61864e8355a575a7b28c6, type: 3}
