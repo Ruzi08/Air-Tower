@@ -30,8 +30,7 @@ public class RadarManager : MonoBehaviour
     [Header("Spawn Settings")]
     [SerializeField] private float spawnInterval = 2f;
     [SerializeField] private int maxAircrafts = 10;
-    [SerializeField] private float minSpeed = 0.1f;
-    [SerializeField] private float maxSpeed = 0.5f;
+    [SerializeField] private float aircraftSpeed = 120f;
     [SerializeField] private float spawnInset = 0.05f;
     [SerializeField] private float spawnClearRadius = 0.08f;
     [SerializeField] private int spawnPointSearchAttempts = 20;
@@ -254,10 +253,8 @@ public class RadarManager : MonoBehaviour
             end = GetRandomEdgePoint();
         }
 
-        float speed = Random.Range(minSpeed, maxSpeed);
-
         ac.Initialize(radarArea, start, end, targetZone);
-        ac.Speed = speed;
+        ac.Speed = aircraftSpeed;
         ac.aircraftSelectSound = aircraftSelectSound;
         ac.OnSelected += HandleAircraftSelected;
         ac.OnDestroyed += HandleAircraftDestroyed;
