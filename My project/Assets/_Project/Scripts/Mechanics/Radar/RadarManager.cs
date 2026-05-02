@@ -32,6 +32,8 @@ public class RadarManager : MonoBehaviour
     [SerializeField] private MissedAircraftPanel missedPanel;
 
     [Header("Spawn Settings")]
+    [SerializeField] private float spawnInterval = 2f;
+    [SerializeField] private bool spawnEnabled = false;
     [SerializeField] private float spawnIntervalMin = 2f;
     [SerializeField] private float spawnIntervalMax = 8f;
     [SerializeField] private int maxAircrafts = 10;
@@ -171,6 +173,14 @@ public class RadarManager : MonoBehaviour
         isInitialized = true;
     }
 
+    public void StartSpawning()
+    {
+        if (!spawnEnabled)
+        {
+            spawnEnabled = true;
+        }
+    }
+
     private void InitializeContainer()
     {
         if (aircraftContainer != null) return;
@@ -206,6 +216,7 @@ public class RadarManager : MonoBehaviour
 
     private void HandleSpawning()
     {
+        if (!spawnEnabled) return;
         if (activeAircrafts.Count >= maxAircrafts) return;
 
 
