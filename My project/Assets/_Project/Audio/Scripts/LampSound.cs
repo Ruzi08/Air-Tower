@@ -1,82 +1,69 @@
-public class LampSound : Sound
+using Unity.VisualScripting;
+using UnityEngine;
+
+public class LampSound : MonoBehaviour
 {
-    // Флаги для цикличных звуков (как было ранее)
-    private bool isGreenLoopPlaying = false;
-    private bool isYellowPlaying = false;
-    private bool isRedPlaying = false;
+    [Header("Audio Sources")]
+    [SerializeField] private Sound yellowSource;
+    [SerializeField] private Sound redSource;
+    [SerializeField] private Sound greenSource; // Отдельный для зелёного
 
-    protected override void Start()
+    void Start()
     {
-        
-    }
-    
-    protected override void Awake()
-    {
-        base.Awake();
-        loop = false;   // по умолчанию не зациклено
-    }
-
-    public void PlayGreenOneShot()
-    {
-        if (sounds != null && sounds.Length > 0 && sounds[0] != null)
+        // Создаём источники, если не назначены
+        if (yellowSource == null)
         {
-            // Однократное воспроизведение
-            PlaySnd(sounds[0], volume, destroyed, 1, 1, false);
+            yellowSource = gameObject.AddComponent<Sound>();
+        }
+        if (redSource == null)
+        {
+            redSource = gameObject.AddComponent<Sound>();
+        }
+        if (greenSource == null)
+        {
+            greenSource = gameObject.AddComponent<Sound>();
         }
     }
 
     public void PlayYellowLoop()
     {
-        if (isYellowPlaying) return;
-        StopAll();
-        if (sounds != null && sounds.Length > 1 && sounds[1] != null)
+        if (yellowSource != null)
         {
-            PlaySnd(sounds[1], volume, destroyed, 1, 1, true);
-            isYellowPlaying = true;
+            yellowSource.PlaySnd();
         }
-    }
-
-    public void PlayRedLoop()
-    {
-        if (isRedPlaying) return;
-        StopAll();
-        if (sounds != null && sounds.Length > 2 && sounds[2] != null)
-        {
-            PlaySnd(sounds[2], volume, destroyed, 1, 1, true);
-            isRedPlaying = true;
-        }
-    }
-
-    public void StopGreen()   // для зелёного цикла (не используется в однократном режиме, но на всякий случай)
-    {
-        if (!isGreenLoopPlaying) return;
-        if (AudioSrc != null && AudioSrc.isPlaying && AudioSrc.clip == sounds[0])
-            StopSnd();
-        isGreenLoopPlaying = false;
     }
 
     public void StopYellow()
     {
-        if (!isYellowPlaying) return;
-        if (AudioSrc != null && AudioSrc.isPlaying && AudioSrc.clip == sounds[1])
-            StopSnd();
-        isYellowPlaying = false;
+        if (yellowSource != null)
+            yellowSource.StopSnd();
+    }
+
+    public void PlayRedLoop()
+    {
+        if (redSource != null)
+        {
+            redSource.PlaySnd();
+        }
     }
 
     public void StopRed()
     {
-        if (!isRedPlaying) return;
-        if (AudioSrc != null && AudioSrc.isPlaying && AudioSrc.clip == sounds[2])
-            StopSnd();
-        isRedPlaying = false;
+        if (redSource != null)
+            redSource.StopSnd();
     }
 
-    private void StopAll()
+    public void PlayGreenOneShot()
     {
-        if (AudioSrc != null && AudioSrc.isPlaying)
-            StopSnd();
-        isGreenLoopPlaying = false;
-        isYellowPlaying = false;
-        isRedPlaying = false;
+        if (greenSource != null)
+        {
+            greenSource.PlaySnd();
+        }
+    }
+
+    public void StopGreen()
+    {
+        if (greenSource != null)
+            greenSource.StopSnd();
     }
 }

@@ -1,14 +1,14 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using static UnityEngine.GraphicsBuffer;
 
 public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IPointerUpHandler, Interactable
 {
     [Header("Movement")]
     [SerializeField] private Vector2 startPosNorm; // 0..1
     [SerializeField] private Vector2 endPosNorm;   // 0..1
-    [SerializeField] private float moveSpeed = 0.3f;   // Скорость перемещения
+    [SerializeField] private float moveSpeed = 120f;   // UI units per second
 
     [Header("Components")]
     [SerializeField] private RectTransform rectTransform;
@@ -17,18 +17,39 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
     [SerializeField] private Color selectedColor = Color.green;
 
     [Header("Identification")]
-    [SerializeField] private string aircraftID; 
+    [SerializeField] private string aircraftID;
     [SerializeField] private bool generateIDOnAwake = true;
 
     [Header("Target Zone")]
     [SerializeField] private Vector2 targetZoneNorm;
-    
+    [SerializeField] private bool useFixedZone = false;
+
     [Header("Audio")]
     public AudioClip aircraftSelectSound;
     private AudioSource audioSource;
 
+    [Header("ID Label")]
+    [SerializeField] private GameObject idLabelPrefab;
+    [SerializeField] private Color idLabelColor = Color.white;
+    [SerializeField] private Vector2 idLabelOffset = new Vector2(0, -15f);
+    [SerializeField] private float idLabelFontSize = 1f;
+
+    [Header("Special Target Visual")]
+    [SerializeField] private bool useCustomTargetMarker = false; // Использовать ли кастомный маркер
+    [SerializeField] private Color customTargetColor = new Color(0f, 1f, 0f, 0.5f);
+    [SerializeField] private float customTargetRadius = 20f;
+
+    public bool UseCustomTargetMarker => useCustomTargetMarker;
+    public Color CustomTargetColor => customTargetColor;
+    public float CustomTargetRadius => customTargetRadius;
+
     public Vector2 TargetZoneNorm => targetZoneNorm;
     public Vector2 TargetZoneWorld => NormToWorld(targetZoneNorm);
+    public bool UseFixedZone => useFixedZone;
+
+    private TextMeshProUGUI idLabelText;
+    private RectTransform idLabelRect;
+
 
     private bool isPointerDown = false;
     private float pointerDownTime = 0f;
@@ -38,21 +59,30 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
     private static int lastGeneratedNumber = 0;
     private static System.Random random = new System.Random();
 
-
-    private RectTransform parentRect; // Размер области радара
+    private RectTransform parentRect;
     private float progress = 0f;
     private bool isSelected = false;
-
 
     public System.Action<AircraftController, bool> OnDestinationReached;
 
     public bool IsPointerDown => isPointerDown;
     public bool IsSelected => isSelected;
-    public float RemainingFlightTime => moveSpeed <= 0f ? float.PositiveInfinity : Mathf.Max(0f, 1f - progress) / moveSpeed;
+    public float RemainingFlightTime
+    {
+        get
+        {
+            float speed = Mathf.Max(0f, moveSpeed);
+            if (speed <= 0f)
+                return float.PositiveInfinity;
+
+            return GetRemainingDistanceWorld() / speed;
+        }
+    }
+
     public float Speed
     {
         get => moveSpeed;
-        set => moveSpeed = value;
+        set => moveSpeed = Mathf.Max(0f, value);
     }
 
     public string AircraftID => aircraftID;
@@ -63,28 +93,43 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
     public System.Action<AircraftController> OnReachedDestination;
     public System.Action<AircraftController> OnDestroyed;
 
-
     public Vector2 StartPositionWorld => NormToWorld(startPosNorm);
     public Vector2 EndPositionWorld => NormToWorld(endPosNorm);
     public Vector2 CurrentPosition => rectTransform.anchoredPosition;
-    public Vector2 VelocityWorld => moveSpeed * (EndPositionWorld - StartPositionWorld);
+    public Vector2 VelocityWorld
+    {
+        get
+        {
+            float speed = Mathf.Max(0f, moveSpeed);
+            if (speed <= 0f)
+                return Vector2.zero;
 
+            Vector2 direction = EndPositionWorld - CurrentPosition;
+            if (direction.sqrMagnitude <= 0.0001f)
+                return Vector2.zero;
+
+            return direction.normalized * speed;
+        }
+    }
 
     private void Awake()
     {
         audioSource = GetComponentInParent<AudioSource>();
         if (audioSource == null)
             audioSource = gameObject.AddComponent<AudioSource>();
+
         audioSource.playOnAwake = false;
+
         if (rectTransform == null) rectTransform = GetComponent<RectTransform>();
         if (aircraftImage == null) aircraftImage = GetComponent<Image>();
+
         if (generateIDOnAwake && string.IsNullOrEmpty(aircraftID))
         {
             GenerateNewID();
         }
     }
 
-    public void Initialize(RectTransform radarArea, Vector2 start, Vector2 end,Vector2 target)
+    public void Initialize(RectTransform radarArea, Vector2 start, Vector2 end, Vector2 target)
     {
         parentRect = radarArea;
         startPosNorm = start;
@@ -92,33 +137,39 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
         targetZoneNorm = target;
         progress = 0f;
 
-        // Сбрасываем anchor в Top-Left для правильного позиционирования
         rectTransform.anchorMin = Vector2.zero;
         rectTransform.anchorMax = Vector2.zero;
         rectTransform.pivot = new Vector2(0.5f, 0.5f);
-
         rectTransform.sizeDelta = new Vector2(60, 60);
 
         if (aircraftImage != null)
         {
-            aircraftImage.color = Color.red; // Яркий цвет для отладки
+            aircraftImage.color = Color.red;
         }
 
+        CreateIDLabel();
         UpdatePosition();
         SetSelected(false);
     }
 
-    void Update()
+    private void Update()
     {
         if (parentRect == null) return;
 
-        progress += moveSpeed * Time.deltaTime;
+        float pathLength = GetPathLengthWorld();
+        if (pathLength <= 0.0001f)
+        {
+            progress = 1f;
+        }
+        else
+        {
+            progress += (Mathf.Max(0f, moveSpeed) * Time.deltaTime) / pathLength;
+        }
 
         if (progress >= 1f)
         {
             bool hitTarget = CheckIfHitTarget();
             OnDestinationReached?.Invoke(this, hitTarget);
-            // Самолет достиг точки назначения
             OnReachedDestination?.Invoke(this);
             Destroy(gameObject);
         }
@@ -133,7 +184,7 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
         Vector2 currentNorm = Vector2.Lerp(startPosNorm, endPosNorm, progress);
         Vector2 newPos = NormToWorld(currentNorm);
         rectTransform.anchoredPosition = newPos;
-
+        UpdateIDLabelPosition();
     }
 
     private Vector2 NormToWorld(Vector2 norm)
@@ -144,22 +195,15 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
             return Vector2.zero;
         }
 
-        // Получаем размер родительского RectTransform
         Vector2 size = parentRect.rect.size;
-
-        // Конвертируем нормализованные координаты (0..1) в локальные координаты
-        // 0,0 - левый нижний угол, 1,1 - правый верхний
         float x = norm.x * size.x;
         float y = norm.y * size.y;
-
-
         return new Vector2(x, y);
     }
 
     public void Interact()
     {
         ToggleSelection();
-        
     }
 
     public string GetDescription()
@@ -175,7 +219,6 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
             return;
         }
 
-        // Вызываем наш метод взаимодействия
         Interact();
     }
 
@@ -183,6 +226,7 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
     {
         if (aircraftSelectSound != null && audioSource != null)
             audioSource.PlayOneShot(aircraftSelectSound);
+
         SetSelected(!isSelected);
     }
 
@@ -205,17 +249,16 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
     public bool WillCollideWith(AircraftController other, float checkRadius = 0.05f)
     {
         if (other == null) return false;
+
         float distance = Vector2.Distance(CurrentPosition, other.CurrentPosition);
-        return distance < checkRadius * parentRect.rect.width; // Переводим радиус в пиксели
+        return distance < checkRadius * parentRect.rect.width;
     }
 
     public void GenerateNewID()
     {
         aircraftID = GenerateUniqueAircraftID();
         gameObject.name = $"Aircraft_{aircraftID}";
-
         OnIDGenerated?.Invoke(aircraftID);
-
     }
 
     public void SetID(string newID)
@@ -223,6 +266,51 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
         aircraftID = newID;
         gameObject.name = $"Aircraft_{aircraftID}";
         OnIDGenerated?.Invoke(aircraftID);
+    }
+
+    private void CreateIDLabel()
+    {
+        if (idLabelPrefab != null)
+        {
+            GameObject labelObj = Instantiate(idLabelPrefab, transform);
+            idLabelText = labelObj.GetComponent<TextMeshProUGUI>();
+            idLabelRect = labelObj.GetComponent<RectTransform>();
+        }
+        else
+        {
+            GameObject labelObj = new GameObject("IDLabel", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+            labelObj.transform.SetParent(transform, false);
+
+            idLabelText = labelObj.GetComponent<TextMeshProUGUI>();
+            idLabelRect = labelObj.GetComponent<RectTransform>();
+
+            idLabelText.fontSize = idLabelFontSize;
+            idLabelText.alignment = TextAlignmentOptions.Center;
+            idLabelText.raycastTarget = false;
+            idLabelText.fontStyle = FontStyles.Bold;
+
+            TMP_FontAsset defaultFont = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
+            if (defaultFont != null)
+                idLabelText.font = defaultFont;
+        }
+
+        idLabelRect.anchorMin = new Vector2(0.5f, 0.5f);
+        idLabelRect.anchorMax = new Vector2(0.5f, 0.5f);
+        idLabelRect.pivot = new Vector2(0.5f, 0f);
+        idLabelRect.sizeDelta = new Vector2(60, 20);
+
+        idLabelText.text = aircraftID;
+        idLabelText.color = idLabelColor;
+        idLabelText.outlineWidth = 0.2f;
+        idLabelText.outlineColor = Color.black;
+    }
+
+    private void UpdateIDLabelPosition()
+    {
+        if (idLabelRect != null)
+        {
+            idLabelRect.anchoredPosition = idLabelOffset;
+        }
     }
 
     private static string GenerateUniqueAircraftID()
@@ -241,10 +329,10 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
         OnDestroyed?.Invoke(this);
     }
 
-    // Для отладки траектории в редакторе
     private void OnDrawGizmosSelected()
     {
         if (parentRect == null) return;
+
         Gizmos.color = Color.yellow;
         Vector3 startWorld = transform.parent.TransformPoint(NormToWorld(startPosNorm));
         Vector3 endWorld = transform.parent.TransformPoint(NormToWorld(endPosNorm));
@@ -255,14 +343,12 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        // Только если самолет уже выделен
         if (!isSelected) return;
 
         isPointerDown = true;
         pointerDownTime = Time.time;
         CancelInvoke(nameof(StartEditMode));
         Invoke(nameof(StartEditMode), holdTimeToEdit);
-
     }
 
     public void OnPointerUp(PointerEventData eventData)
@@ -290,17 +376,44 @@ public class AircraftController : MonoBehaviour, IPointerClickHandler, IPointerD
         startPosNorm = currentNorm;
         endPosNorm = newEndNorm;
         progress = 0f;
-
     }
 
+    private float GetPathLengthWorld()
+    {
+        return Vector2.Distance(StartPositionWorld, EndPositionWorld);
+    }
+
+    private float GetRemainingDistanceWorld()
+    {
+        return Vector2.Distance(CurrentPosition, EndPositionWorld);
+    }
 
     private bool CheckIfHitTarget()
     {
-        // Порог сравнения (допустимая погрешность)
-        float threshold = 0.05f;
+        if (useFixedZone) // Добавьте этот флаг
+        {
+            // Ивентовый самолёт - проверяем, достиг ли маршрут целевой точки
+            float distance = Vector2.Distance(endPosNorm, targetZoneNorm);
 
-        // Проверяем, что конечная точка близка к целевой зоне
+            return distance < 2.05f;
+        }
+
+        // Для всех самолётов проверяем, достигла ли конечная точка целевой зоны
+        float threshold = 0.05f;
         return Vector2.Distance(endPosNorm, targetZoneNorm) < threshold;
     }
 
+    public void SetCustomTargetMarker(bool enable, Color? color = null, float? radius = null)
+    {
+        useCustomTargetMarker = enable;
+        if (color.HasValue) customTargetColor = color.Value;
+        if (radius.HasValue) customTargetRadius = radius.Value;
+    }
+
+    public void SetFixedZone(bool fixedZone)
+    {
+        useFixedZone = fixedZone;
+    }
 }
+
+

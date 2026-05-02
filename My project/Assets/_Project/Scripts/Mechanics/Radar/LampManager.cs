@@ -30,6 +30,7 @@ public class LampManager : MonoBehaviour
 
     private float greenBlinkTimer = 0f;
     private bool isGreenBlinking = false;
+    private bool greenLampForcedOn = false;
 
     void Start()
     {
@@ -57,6 +58,7 @@ public class LampManager : MonoBehaviour
     void Update()
     {
         if (radarManager == null) return;
+        UpdateGreenLamp();
 
         // 1. Если нет ни одного самолёта → всё выключено
         if (radarManager.GetActiveAircraftCount() == 0)
@@ -75,11 +77,6 @@ public class LampManager : MonoBehaviour
             if (currentMode != AlarmMode.Red)
             {
                 SetMode(AlarmMode.Red);
-                StopGreenBlink();          // зелёный сигнал отключается
-                greenLamp.TurnOff();
-                yellowLamp.TurnOff();
-                lampsnd.StopYellow();
-                lampsnd.StopGreen();
             }
             BlinkRedLamp();
         }
@@ -88,11 +85,6 @@ public class LampManager : MonoBehaviour
             if (currentMode != AlarmMode.Yellow)
             {
                 SetMode(AlarmMode.Yellow);
-                StopGreenBlink();
-                greenLamp.TurnOff();
-                redLamp.TurnOff();
-                lampsnd.StopGreen();
-                lampsnd.StopRed();
             }
             BlinkYellowLamp();
         }
@@ -102,7 +94,6 @@ public class LampManager : MonoBehaviour
             if (currentMode != AlarmMode.None)
             {
                 SetMode(AlarmMode.None);
-                StopGreenBlink();
                 yellowLamp.TurnOff();
                 redLamp.TurnOff();
                 lampsnd.StopYellow();
@@ -110,8 +101,10 @@ public class LampManager : MonoBehaviour
                 lampsnd.StopGreen();
             }
         }
+    }
 
-        // Отдельно зелёное мигание (при появлении самолёта)
+    private void UpdateGreenLamp()
+    {
         if (isGreenBlinking)
         {
             greenBlinkTimer -= Time.deltaTime;
@@ -126,24 +119,14 @@ public class LampManager : MonoBehaviour
 
     private void OnAircraftSpawned()
     {
-        // Защита: не играть зелёный сигнал, если уже есть предупреждение или критическая ситуация
-        if (radarManager.HasCriticalCollision() || radarManager.HasCollisionWarning())
-            return;
 
         // Зелёный аларм: звук + лампа на короткое время
-        StopGreenBlink(); // если уже мигает – сбросим
         isGreenBlinking = true;
         greenBlinkTimer = greenBlinkDuration;
         greenLamp.TurnOn();
         lampsnd.PlayGreenOneShot();   // однократный звук (не цикл)
     }
 
-    private void StopGreenBlink()
-    {
-        isGreenBlinking = false;
-        greenBlinkTimer = 0f;
-        greenLamp.TurnOff();
-    }
 
     private void BlinkYellowLamp()
     {

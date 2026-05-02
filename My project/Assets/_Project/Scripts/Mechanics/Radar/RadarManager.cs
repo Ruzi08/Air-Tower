@@ -2,6 +2,7 @@ using NUnit.Framework.Interfaces;
 using System.Collections.Generic;
 using System.ComponentModel;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
@@ -27,12 +28,17 @@ public class RadarManager : MonoBehaviour
     [SerializeField] private GameObject aircraftPrefab;
     [SerializeField] private Transform aircraftContainer;
 
+    [Header("Missed Aircraft Panel")]
+    [SerializeField] private MissedAircraftPanel missedPanel;
+
     [Header("Spawn Settings")]
-    [SerializeField] private float spawnInterval = 2f;
+    [SerializeField] private float spawnIntervalMin = 2f;
+    [SerializeField] private float spawnIntervalMax = 8f;
     [SerializeField] private int maxAircrafts = 10;
-    [SerializeField] private float minSpeed = 0.1f;
-    [SerializeField] private float maxSpeed = 0.5f;
+    [SerializeField] private float aircraftSpeed = 120f;
     [SerializeField] private float spawnInset = 0.05f;
+    [SerializeField] private float spawnClearRadius = 0.08f;
+    [SerializeField] private int spawnPointSearchAttempts = 20;
 
     [Header("Collision")]
     [SerializeField] private float collisionRadius = 0.04f;
@@ -47,6 +53,7 @@ public class RadarManager : MonoBehaviour
     [SerializeField] private GameObject trajectoryLinePrefab;
     [SerializeField] private float trajectoryLineWidth = 2f;
     [SerializeField] private Color trajectoryLineColor = Color.green;
+
 
     [Header("Trajectory Editing")]
     [SerializeField] private Color editLineColor = Color.yellow;
@@ -69,8 +76,11 @@ public class RadarManager : MonoBehaviour
 
     [Header("Audio")]
     [SerializeField] private AudioClip aircraftSelectSound;
+    [SerializeField] private FatigueManager fatigueManager;
     private AudioSource audioSource;
+
     
+
     private int successfulArrivalsCount = 0;
     private bool isAdvancedMode = false;
 
@@ -96,10 +106,14 @@ public class RadarManager : MonoBehaviour
     private readonly HashSet<AircraftController> criticalCollisionAircrafts = new HashSet<AircraftController>();
     private AircraftController selectedAircraft;
     private float spawnTimer;
+    private float currentSpawnInterval;
     private bool isInitialized = false;
 
     private Image destinationZoneImage;
     private RectTransform destinationZoneRect;
+
+    private GameObject specialTargetMarker; // Специальный маркер для ивентового самолёта
+    private AircraftController specialMarkerAircraft;
 
     private void Awake()
     {
@@ -108,6 +122,11 @@ public class RadarManager : MonoBehaviour
         if (audioSource == null)
             audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false;
+
+        if (fatigueManager == null)
+        {
+            fatigueManager = FindFirstObjectByType<FatigueManager>();
+        }
     }
     
     public int GetActiveAircraftCount() => activeAircrafts.Count;
@@ -141,6 +160,8 @@ public class RadarManager : MonoBehaviour
         maxAircrafts = initialMaxAircrafts;
         successfulArrivalsCount = 0;
         isAdvancedMode = false;
+
+        currentSpawnInterval = Random.Range(spawnIntervalMin, spawnIntervalMax);
 
         if (aircraftContainer == null)
         {
@@ -187,11 +208,14 @@ public class RadarManager : MonoBehaviour
     {
         if (activeAircrafts.Count >= maxAircrafts) return;
 
+
         spawnTimer += Time.deltaTime;
-        if (spawnTimer >= spawnInterval)
+        
+        if (spawnTimer >= currentSpawnInterval)
         {
             spawnTimer = 0f;
             SpawnAircraft();
+            currentSpawnInterval = Random.Range(spawnIntervalMin, spawnIntervalMax);
         }
     }
 
@@ -229,8 +253,11 @@ public class RadarManager : MonoBehaviour
             return;
         }
 
-        int startSide = Random.Range(0, 4);
-        Vector2 start = GetEdgePointOnSide(startSide, spawnInset);
+        if (!TryGetSpawnStartPoint(out int startSide, out Vector2 start))
+        {
+            Destroy(go);
+            return;
+        }
 
         Vector2 targetZone = GetRandomEdgePoint();
         while ((int)GetEdgeSide(targetZone) == startSide) targetZone = GetRandomEdgePoint();
@@ -243,10 +270,8 @@ public class RadarManager : MonoBehaviour
             end = GetRandomEdgePoint();
         }
 
-        float speed = Random.Range(minSpeed, maxSpeed);
-
         ac.Initialize(radarArea, start, end, targetZone);
-        ac.Speed = speed;
+        ac.Speed = aircraftSpeed;
         ac.aircraftSelectSound = aircraftSelectSound;
         ac.OnSelected += HandleAircraftSelected;
         ac.OnDestroyed += HandleAircraftDestroyed;
@@ -255,6 +280,72 @@ public class RadarManager : MonoBehaviour
         activeAircrafts.Add(ac);
         CreateTrajectoryLineForAircraft(ac);
         OnAircraftSpawned?.Invoke();
+    }
+
+    private bool TryGetSpawnStartPoint(out int startSide, out Vector2 start)
+    {
+        startSide = -1;
+        start = Vector2.zero;
+
+        if (radarArea == null)
+        {
+            return false;
+        }
+
+        int attempts = Mathf.Max(1, spawnPointSearchAttempts);
+        for (int i = 0; i < attempts; i++)
+        {
+            int candidateSide = Random.Range(0, 4);
+            Vector2 candidateStart = GetEdgePointOnSide(candidateSide, spawnInset);
+
+            if (!IsSpawnPointClear(candidateStart))
+            {
+                continue;
+            }
+
+            startSide = candidateSide;
+            start = candidateStart;
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool IsSpawnPointClear(Vector2 candidateStart)
+    {
+        if (radarArea == null)
+        {
+            return false;
+        }
+
+        float minDistance = Mathf.Max(0f, spawnClearRadius) * radarArea.rect.width;
+        if (minDistance <= 0f)
+        {
+            return true;
+        }
+
+        Vector2 candidateWorld = NormalizedToRadarPosition(candidateStart);
+
+        foreach (var aircraft in activeAircrafts)
+        {
+            if (aircraft == null)
+            {
+                continue;
+            }
+
+            if (Vector2.Distance(candidateWorld, aircraft.CurrentPosition) < minDistance)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private Vector2 NormalizedToRadarPosition(Vector2 normalizedPoint)
+    {
+        Vector2 size = radarArea.rect.size;
+        return new Vector2(normalizedPoint.x * size.x, normalizedPoint.y * size.y);
     }
 
     private Vector2 GetRandomEdgePoint()
@@ -315,10 +406,25 @@ public class RadarManager : MonoBehaviour
 
                 if (a1.WillCollideWith(a2, collisionRadius))
                 {
+                    TriggerCollisionGameOver();
                     Destroy(a1.gameObject);
                     Destroy(a2.gameObject);
+                    return;
                 }
             }
+        }
+    }
+
+    private void TriggerCollisionGameOver()
+    {
+        if (fatigueManager == null)
+        {
+            fatigueManager = FindFirstObjectByType<FatigueManager>();
+        }
+
+        if (fatigueManager != null && !fatigueManager.isGameOver)
+        {
+            fatigueManager.GameOver();
         }
     }
 
@@ -355,11 +461,15 @@ public class RadarManager : MonoBehaviour
         }
 
         selectedAircraft = ac;
-        ShowZoneFixed(targetZoneImage, targetZoneRect, ac.TargetZoneNorm, targetZoneWidth, targetZoneColor);
-
-        if (infoText != null)
+        if (ac.UseFixedZone)
         {
-            infoText.text = ac.GetDescription();
+            // Ивентовый самолёт - зона в фиксированном месте (как на грани, но в точке)
+            ShowZoneOnEdge(ac.TargetZoneNorm, targetZoneWidth, targetZoneColor);
+        }
+        else
+        {
+            // Обычные самолёты - зона на грани
+            ShowZoneFixed(targetZoneImage, targetZoneRect, ac.TargetZoneNorm, targetZoneWidth, targetZoneColor);
         }
 
         SetTrajectoryLineVisible(ac, true);
@@ -616,6 +726,11 @@ public class RadarManager : MonoBehaviour
         }
         else
         {
+
+            if (missedPanel != null)
+            {
+                missedPanel.AddMiss();
+            }
         }
     }
 
@@ -645,9 +760,6 @@ public class RadarManager : MonoBehaviour
             editTrajectoryLineImage.gameObject.SetActive(false);
             selectedAircraft = null;
             HideAllZones();
-
-            if (infoText != null)
-                infoText.text = "Select aircraft";
         }
         RemoveTrajectoryLine(ac);
         collisionWarningAircrafts.Remove(ac);
@@ -1065,6 +1177,7 @@ public class RadarManager : MonoBehaviour
     private void HideAllZones()
     {
         if (targetZoneImage != null) targetZoneImage.gameObject.SetActive(false);
+        HideSpecialTargetMarker();
     }
 
     private RadarEdgeSide GetEdgeSide(Vector2 normPoint)
@@ -1160,4 +1273,252 @@ public class RadarManager : MonoBehaviour
     {
         return criticalCollisionAircrafts.Count > 0;
     }
+
+    public void SpawnEventAircraft(string aircraftID, Vector2 targetPoint, float targetRadius, float speed, Vector2? customStartPoint = null)
+    {
+        if (aircraftPrefab == null)
+        {
+            Debug.LogError("RadarManager: aircraftPrefab не назначен!");
+            return;
+        }
+
+        if (aircraftContainer == null)
+        {
+            InitializeContainer();
+            if (aircraftContainer == null)
+            {
+                Debug.LogError("RadarManager: не удалось создать контейнер для самолётов!");
+                return;
+            }
+        }
+
+        // Создаём самолёт
+        GameObject go = Instantiate(aircraftPrefab, aircraftContainer);
+        RectTransform rect = go.GetComponent<RectTransform>();
+
+        if (rect == null)
+        {
+            Destroy(go);
+            Debug.LogError("RadarManager: у префаба самолёта нет RectTransform!");
+            return;
+        }
+
+        AircraftController ac = go.GetComponent<AircraftController>();
+        if (ac == null)
+        {
+            Destroy(go);
+            Debug.LogError("RadarManager: у префаба самолёта нет AircraftController!");
+            return;
+        }
+
+        // Устанавливаем ID самолёта
+        ac.SetID(aircraftID);
+
+        // Определяем стартовую точку
+        Vector2 startPoint;
+        int startSide;
+
+        if (customStartPoint.HasValue)
+        {
+            // Используем кастомную точку
+            startPoint = customStartPoint.Value;
+            startSide = (int)GetEdgeSide(startPoint);
+        }
+        else
+        {
+            // Находим свободную точку на краю
+            if (!TryGetSpawnStartPoint(out startSide, out startPoint))
+            {
+                // Если не нашли свободную, используем случайную
+                startSide = Random.Range(0, 4);
+                startPoint = GetEdgePointOnSide(startSide, spawnInset);
+            }
+        }
+
+        // Целевая точка (куда самолёт должен прилететь)
+        Vector2 endPoint = targetPoint;
+
+        // Убеждаемся, что старт и цель не на одной стороне
+        if ((int)GetEdgeSide(endPoint) == startSide)
+        {
+            // Если на одной стороне, немного смещаем цель
+            Vector2 offset;
+            switch (GetEdgeSide(endPoint))
+            {
+                case RadarEdgeSide.Left:
+                    offset = new Vector2(0.05f, 0f);
+                    break;
+                case RadarEdgeSide.Right:
+                    offset = new Vector2(-0.05f, 0f);
+                    break;
+                case RadarEdgeSide.Bottom:
+                    offset = new Vector2(0f, 0.05f);
+                    break;
+                default:
+                    offset = new Vector2(0f, -0.05f);
+                    break;
+            }
+
+            endPoint = new Vector2(
+                Mathf.Clamp01(endPoint.x + offset.x),
+                Mathf.Clamp01(endPoint.y + offset.y)
+            );
+        }
+
+        // Инициализируем самолёт
+        ac.Initialize(radarArea, startPoint, endPoint, targetPoint);
+        ac.Speed = speed;
+        ac.aircraftSelectSound = aircraftSelectSound;
+        ac.SetFixedZone(true);
+
+        ac.SetCustomTargetMarker(true, new Color(0f, 1f, 0f, 0.5f), targetRadius);
+
+
+        // Подписываемся на события
+        ac.OnSelected += HandleAircraftSelected;
+        ac.OnDestroyed += HandleAircraftDestroyed;
+        ac.OnDestinationReached += HandleDestinationReached;
+
+        activeAircrafts.Add(ac);
+        CreateTrajectoryLineForAircraft(ac);
+        OnAircraftSpawned?.Invoke();
+
+        Debug.Log($"✅ EventAircraftSpawner: Самолёт {aircraftID} успешно создан! Старт: {startPoint}, Цель: {targetPoint}");
+    }
+
+
+    private void CreateCircleSpriteForMarker(Image image)
+    {
+        int textureSize = 64;
+        Texture2D texture = new Texture2D(textureSize, textureSize);
+        Color[] colors = new Color[textureSize * textureSize];
+
+        Vector2 center = new Vector2(textureSize / 2f, textureSize / 2f);
+        float radius = textureSize / 2f;
+
+        for (int y = 0; y < textureSize; y++)
+        {
+            for (int x = 0; x < textureSize; x++)
+            {
+                float distance = Vector2.Distance(new Vector2(x, y), center);
+                if (distance <= radius)
+                {
+                    float alpha = 1f - (distance / radius);
+                    alpha = Mathf.Pow(alpha, 0.5f);
+                    colors[y * textureSize + x] = new Color(1f, 1f, 1f, alpha);
+                }
+                else
+                {
+                    colors[y * textureSize + x] = Color.clear;
+                }
+            }
+        }
+
+        texture.SetPixels(colors);
+        texture.Apply();
+        texture.wrapMode = TextureWrapMode.Clamp;
+
+        Sprite sprite = Sprite.Create(texture, new Rect(0, 0, textureSize, textureSize), new Vector2(0.5f, 0.5f));
+        image.sprite = sprite;
+    }
+
+    // Пульсация специального маркера
+    private System.Collections.IEnumerator PulseSpecialMarker()
+    {
+        if (specialTargetMarker == null) yield break;
+
+        Image image = specialTargetMarker.GetComponent<Image>();
+        if (image == null) yield break;
+
+        Color originalColor = image.color;
+        float time = 0f;
+
+        while (specialTargetMarker != null && specialMarkerAircraft != null && specialMarkerAircraft != null)
+        {
+            time += Time.deltaTime;
+            float pulse = Mathf.Sin(time * Mathf.PI * 2f) * 0.3f + 0.7f;
+            Color color = originalColor;
+            color.a = originalColor.a * pulse;
+            image.color = color;
+            yield return null;
+        }
+    }
+
+    // Скрыть специальный маркер
+    private void HideSpecialTargetMarker()
+    {
+        if (specialTargetMarker != null)
+        {
+            Destroy(specialTargetMarker);
+            specialTargetMarker = null;
+        }
+        specialMarkerAircraft = null;
+    }
+    private void ShowFixedTargetZone(Vector2 normPos, float width, Color color)
+    {
+        if (targetZoneImage == null) return;
+
+        Vector2 size = radarArea.rect.size;
+        Vector2 worldPos = new Vector2(normPos.x * size.x, normPos.y * size.y);
+
+        // Используем стандартный спрайт (как для граней)
+        targetZoneRect.anchorMin = Vector2.zero;
+        targetZoneRect.anchorMax = Vector2.zero;
+        targetZoneRect.pivot = new Vector2(0.5f, 0.5f);
+        targetZoneRect.sizeDelta = new Vector2(width * size.x, size.y * 0.3f);
+        targetZoneRect.anchoredPosition = worldPos;
+
+        targetZoneImage.sprite = CreateGradientSprite(128, 8, true);
+        targetZoneImage.color = color;
+        targetZoneImage.gameObject.SetActive(true);
+    }
+
+    private void ShowZoneOnEdge(Vector2 normPos, float width, Color color)
+    {
+        if (targetZoneImage == null || targetZoneRect == null || radarArea == null) return;
+
+        Vector2 size = radarArea.rect.size;
+        RadarEdgeSide side = GetEdgeSide(normPos);
+
+        Vector2 center;
+        Vector2 zoneSize;
+        bool horizontal;
+
+        switch (side)
+        {
+            case RadarEdgeSide.Left:
+                center = new Vector2(0f, normPos.y * size.y);
+                zoneSize = new Vector2(width * size.x, size.y * 0.3f);
+                targetZoneRect.pivot = new Vector2(0f, 0.5f);
+                horizontal = true;
+                break;
+            case RadarEdgeSide.Right:
+                center = new Vector2(size.x, normPos.y * size.y);
+                zoneSize = new Vector2(width * size.x, size.y * 0.3f);
+                targetZoneRect.pivot = new Vector2(1f, 0.5f);
+                horizontal = true;
+                break;
+            case RadarEdgeSide.Bottom:
+                center = new Vector2(normPos.x * size.x, 0f);
+                zoneSize = new Vector2(size.x * 0.3f, width * size.y);
+                targetZoneRect.pivot = new Vector2(0.5f, 0f);
+                horizontal = false;
+                break;
+            default: // Top
+                center = new Vector2(normPos.x * size.x, size.y);
+                zoneSize = new Vector2(size.x * 0.3f, width * size.y);
+                targetZoneRect.pivot = new Vector2(0.5f, 1f);
+                horizontal = false;
+                break;
+        }
+
+        targetZoneRect.anchoredPosition = center;
+        targetZoneRect.sizeDelta = zoneSize;
+        targetZoneRect.localRotation = Quaternion.identity;
+
+        targetZoneImage.sprite = CreateGradientSpriteFixed(128, 8, horizontal, side == RadarEdgeSide.Right || side == RadarEdgeSide.Top);
+        targetZoneImage.color = color;
+        targetZoneImage.gameObject.SetActive(true);
+    }
 }
+
