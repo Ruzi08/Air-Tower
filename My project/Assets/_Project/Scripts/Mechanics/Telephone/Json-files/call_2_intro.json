@@ -2,21 +2,15 @@
   "dialogues": [
     {
       "id": "intro_1",
-      "speaker": "Твоя мама",
-      "text": "Привет как дела",
+      "speaker": "BA04",
+      "text": "Рейс BA04, вхожу в вашу зону контроля",
       "autoProgressDelay": 0
     },
     {
       "id": "intro_2",
-      "speaker": "Твоя мама",
-      "text": "Я приготовила покушать пашли",
+      "speaker": "Рейс BA04",
+      "text": "Запрашиваю разрешение на посадку, принимайте",
       "autoProgressDelay": 0
-    },
-    {
-      "id": "intro_3",
-      "speaker": "Твоя мама",
-      "text": "Всё пака",
-      "autoProgressDelay": 1.5
     }
   ]
 }
